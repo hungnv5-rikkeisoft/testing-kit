@@ -1,16 +1,14 @@
 """Deterministic bookkeeping for Stage 2 test execution.
 
 Creates evidence directories and writes per-testcase results back into the
-testcase YAML. Does NOT drive a browser — the agent (via Playwright MCP) does
+testcase YAML. Does NOT drive a browser - the agent (via Playwright MCP) does
 that and calls this helper to record what happened.
 """
 from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from tcformat.schema import load_screen, dump_screen, VALID_STATUSES
-
-VALID_BROWSERS = {"chrome", "safari"}
+from tcformat.schema import load_screen, dump_screen, VALID_STATUSES, VALID_BROWSERS
 
 
 def evidence_dir(screen_slug: str, browser: str, tc_id: str,
@@ -23,7 +21,7 @@ def evidence_dir(screen_slug: str, browser: str, tc_id: str,
     return d
 
 
-def record_result(yaml_path, tc_id: str, browser: str, status: str,
+def record_result(yaml_path: Path | str, tc_id: str, browser: str, status: str,
                   evidence=None, note=None, bug_id=None,
                   tester=None, date=None) -> None:
     """Set one browser's result on one testcase, then write the YAML back.

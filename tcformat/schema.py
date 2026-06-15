@@ -6,6 +6,7 @@ import yaml
 VALID_LEVELS = {"UT", "IT", "ST"}
 VALID_PRIORITIES = {"Low", "Medium", "High"}
 VALID_STATUSES = {"OK", "NG", "N/A"}
+VALID_BROWSERS = {"chrome", "safari"}
 
 
 class SchemaError(Exception):

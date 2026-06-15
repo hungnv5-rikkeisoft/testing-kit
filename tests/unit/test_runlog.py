@@ -66,3 +66,22 @@ def test_record_result_unknown_id(tmp_path):
     p = _write(tmp_path)
     with pytest.raises(ValueError):
         runlog.record_result(p, "ZZ_99", "chrome", "OK")
+
+
+def test_cli_evidence_dir(tmp_path, capsys):
+    runlog.main(["evidence-dir", "--screen", "s", "--browser", "chrome",
+                 "--id", "T1", "--root", str(tmp_path / "ev")])
+    out = capsys.readouterr().out.strip()
+    assert out.endswith(str(Path("s") / "chrome" / "T1"))
+    assert (tmp_path / "ev" / "s" / "chrome" / "T1").is_dir()
+
+
+def test_cli_record(tmp_path):
+    p = _write(tmp_path)
+    runlog.main(["record", "--yaml", str(p), "--id", "UI_01",
+                 "--browser", "chrome", "--status", "OK",
+                 "--evidence", "x.png"])
+    sc = load_screen(p)
+    tc = next(t for t in sc.testcases if t.id == "UI_01")
+    assert tc.result.chrome.status == "OK"
+    assert tc.result.chrome.evidence == ["x.png"]
