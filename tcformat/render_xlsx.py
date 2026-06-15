@@ -9,7 +9,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 DATA_START = 10
-LAST_COL = 18  # through column R (result columns left blank for Stage 2)
+LAST_COL = 18  # through column R (Chrome+Safari result columns K..R)
 INVALID_TITLE = re.compile(r"[\[\]:\*\?/\\]")
 
 
