@@ -1,0 +1,142 @@
+"""Fill the team's "3. Test Report" sheet from pytest JUnit XML output.
+
+Maps a toolkit run (JUnit XML produced by scripts/run.py via --junitxml) into the
+company template "Format test case + Test report.xlsx", sheet "3. Test Report".
+One row per test file (module). Test status maps to OK (passed) / NG (failed or
+error) / N/A (skipped), split across the two browser columns:
+  - Google Chrome (window)  <- the desktop (--chrome) JUnit XML
+  - Safari (ipad)           <- the tablet  (--safari) JUnit XML, optional
+
+Usage:
+    python scripts/gen_report.py --chrome reports/integration-junit.xml \
+        --safari reports/integration-tablet-junit.xml \
+        --out reports/test_report.xlsx
+"""
+from __future__ import annotations
+import argparse
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
+from openpyxl import load_workbook
+
+DEFAULT_TEMPLATE = "template/Format test case + Test report.xlsx"
+REPORT_SHEET = "3. Test Report"
+HEADER_LABEL = "Function/Screen"
+
+
+def parse_junit(path) -> dict[str, dict]:
+    """Return {classname: {"ok": int, "ng": int, "na": int}} from a JUnit XML."""
+    root = ET.parse(path).getroot()
+    suites = root.findall("testsuite") if root.tag == "testsuites" else [root]
+    modules: dict[str, dict] = {}
+    for suite in suites:
+        for tc in suite.findall("testcase"):
+            cls = tc.get("classname", "") or tc.get("name", "")
+            m = modules.setdefault(cls, {"ok": 0, "ng": 0, "na": 0})
+            if tc.find("failure") is not None or tc.find("error") is not None:
+                m["ng"] += 1
+            elif tc.find("skipped") is not None:
+                m["na"] += 1
+            else:
+                m["ok"] += 1
+    return modules
+
+
+def _screen_name(classname: str) -> str:
+    """Display label for a module: the last dotted component (the file stem)."""
+    return classname.split(".")[-1] if classname else classname
+
+
+def _find_header_row(ws) -> int:
+    for r in range(1, 30):
+        if ws.cell(r, 2).value == HEADER_LABEL:
+            return r
+    raise ValueError(f"'{HEADER_LABEL}' header not found in sheet '{REPORT_SHEET}'")
+
+
+def _clear_region(ws, first_row: int, last_row: int, last_col: int = 11):
+    """Unmerge any ranges intersecting the body, then blank its cells, so leftover
+    template sample rows / Total row don't bleed into the generated report."""
+    for rng in list(ws.merged_cells.ranges):
+        if rng.min_row >= first_row and rng.max_row <= last_row:
+            ws.unmerge_cells(str(rng))
+    for r in range(first_row, last_row + 1):
+        for c in range(1, last_col + 1):
+            ws.cell(r, c).value = None
+
+
+def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
+    """Write the Test Report xlsx. Returns the aggregated per-module rows."""
+    chrome = parse_junit(chrome_junit) if chrome_junit else {}
+    safari = parse_junit(safari_junit) if safari_junit else {}
+    modules = sorted(set(chrome) | set(safari))
+
+    wb = load_workbook(template_path)
+    ws = wb[REPORT_SHEET]
+    hdr = _find_header_row(ws)
+    data_start = hdr + 3  # header row + 2 sub-header rows, then data
+
+    _clear_region(ws, data_start, data_start + max(len(modules), 5) + 5)
+
+    rows = []
+    totals = {"c": 4, "total": 0, "c_ok": 0, "c_ng": 0, "c_na": 0,
+              "s_ok": 0, "s_ng": 0, "s_na": 0, "bugs": 0}
+    for i, cls in enumerate(modules):
+        c = chrome.get(cls, {"ok": 0, "ng": 0, "na": 0})
+        s = safari.get(cls, {"ok": 0, "ng": 0, "na": 0})
+        total = (c["ok"] + c["ng"] + c["na"]) or (s["ok"] + s["ng"] + s["na"])
+        bugs = c["ng"] + s["ng"]
+        row = data_start + i
+        ws.cell(row, 1).value = f"{i + 1}.0"
+        ws.cell(row, 2).value = _screen_name(cls)
+        ws.cell(row, 3).value = total
+        ws.cell(row, 4).value = c["ok"]
+        ws.cell(row, 5).value = c["ng"]
+        ws.cell(row, 6).value = c["na"]
+        ws.cell(row, 7).value = s["ok"]
+        ws.cell(row, 8).value = s["ng"]
+        ws.cell(row, 9).value = s["na"]
+        ws.cell(row, 10).value = bugs
+        rows.append({"screen": _screen_name(cls), "total": total,
+                     "chrome": c, "safari": s, "bugs": bugs})
+        totals["total"] += total
+        totals["c_ok"] += c["ok"]; totals["c_ng"] += c["ng"]; totals["c_na"] += c["na"]
+        totals["s_ok"] += s["ok"]; totals["s_ng"] += s["ng"]; totals["s_na"] += s["na"]
+        totals["bugs"] += bugs
+
+    trow = data_start + len(modules)
+    ws.cell(trow, 2).value = "Total"
+    ws.cell(trow, 3).value = totals["total"]
+    ws.cell(trow, 4).value = totals["c_ok"]
+    ws.cell(trow, 5).value = totals["c_ng"]
+    ws.cell(trow, 6).value = totals["c_na"]
+    ws.cell(trow, 7).value = totals["s_ok"]
+    ws.cell(trow, 8).value = totals["s_ng"]
+    ws.cell(trow, 9).value = totals["s_na"]
+    ws.cell(trow, 10).value = totals["bugs"]
+
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    wb.save(out_path)
+    return {"rows": rows, "totals": totals}
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--chrome", required=True,
+                    help="JUnit XML from the desktop/Chrome run")
+    ap.add_argument("--safari", default=None,
+                    help="JUnit XML from the iPad/Safari run (optional)")
+    ap.add_argument("--template", default=DEFAULT_TEMPLATE)
+    ap.add_argument("--out", default="reports/test_report.xlsx")
+    args = ap.parse_args()
+
+    result = build_report(args.template, args.chrome, args.safari, args.out)
+    t = result["totals"]
+    print(f"Wrote {len(result['rows'])} screen row(s) -> {args.out} "
+          f"(Chrome OK/NG/N-A {t['c_ok']}/{t['c_ng']}/{t['c_na']}, "
+          f"Safari {t['s_ok']}/{t['s_ng']}/{t['s_na']}, bugs {t['bugs']})")
+
+
+if __name__ == "__main__":
+    main()
