@@ -14,10 +14,14 @@ Usage:
 """
 from __future__ import annotations
 import argparse
+import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from openpyxl import load_workbook
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from tcformat.report_sheet import (
     REPORT_SHEET, find_header_row, clear_region, write_screen_row)
 
