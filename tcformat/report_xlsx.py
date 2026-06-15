@@ -1,7 +1,9 @@
 """Render Stage 3 report from aggregated YAML results.
 
-Writes the team template's "3. Test Report" sheet plus a new "Evidence" sheet
-that embeds per-step screenshots with a caption and a hyperlink to the original.
+Produces ONE workbook from the team template containing everything in sync from
+the same YAML: the "4.x" testcase-detail sheets (with result columns), the
+"3. Test Report" summary sheet, and an "Evidence" sheet that embeds per-step
+screenshots with a caption and a hyperlink to the original.
 """
 from __future__ import annotations
 import os
@@ -13,6 +15,7 @@ from openpyxl.utils import get_column_letter
 
 from tcformat.report_sheet import (
     REPORT_SHEET, find_header_row, clear_region, write_screen_row)
+from tcformat.render_xlsx import render_into
 
 EVIDENCE_SHEET = "Evidence"
 EVIDENCE_HEADERS = ["TestcaseID", "Browser", "Step", "Anh", "Mo full-size", "Note"]
@@ -103,6 +106,7 @@ def _write_evidence_sheet(wb, screens, base_dir, out_path):
 
 def write_report(report_data, screens, template_path, out_path, base_dir=".") -> None:
     wb = load_workbook(template_path)
+    render_into(wb, screens)               # "4.x" testcase-detail sheets (+ results)
     _write_report_sheet(wb[REPORT_SHEET], report_data)
     if EVIDENCE_SHEET in wb.sheetnames:
         del wb[EVIDENCE_SHEET]

@@ -73,8 +73,13 @@ def _write(ws, testcases, start: int):
     return row
 
 
-def render(screens, template_path, out_path) -> None:
-    wb = load_workbook(template_path)
+def render_into(wb, screens) -> None:
+    """Render screens' testcase sheets into an already-open workbook.
+
+    Clones the template's '4.1.*' sample sheet per screen, fills it, then removes
+    the sample. Saving is left to the caller so a report workbook can hold the
+    testcase detail, the summary, and evidence in one file.
+    """
     sample = _find_sample(wb)
     for idx, screen in enumerate(screens, start=1):
         ws = wb.copy_worksheet(sample)
@@ -88,5 +93,10 @@ def render(screens, template_path, out_path) -> None:
         _clear(ws, DATA_START, last)
         _write(ws, screen.testcases, DATA_START)
     wb.remove(sample)
+
+
+def render(screens, template_path, out_path) -> None:
+    wb = load_workbook(template_path)
+    render_into(wb, screens)
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)

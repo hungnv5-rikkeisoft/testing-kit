@@ -110,3 +110,23 @@ def test_note_written_once_and_safari_evidence_rows(tmp_path):
     assert ws.cell(2, 6).value == "safari note"
     assert ws.cell(3, 3).value == "step_2"
     assert ws.cell(3, 6).value is None        # note only on the first step row
+
+
+def test_unified_workbook_has_testcase_report_and_evidence(tmp_path):
+    rel = "evidence/basic-info/chrome/UI_02/step_1.png"
+    _png(tmp_path / rel)
+    sc = _screen(rel)
+    out = tmp_path / "reports" / "test_report.xlsx"
+    write_report(aggregate([sc]), [sc], TEMPLATE, str(out), base_dir=str(tmp_path))
+
+    wb = load_workbook(out)
+    # one file holds the summary, the evidence, AND the testcase detail
+    assert REPORT_SHEET in wb.sheetnames
+    assert EVIDENCE_SHEET in wb.sheetnames
+    tc_sheets = [n for n in wb.sheetnames if n.startswith("4.")]
+    assert tc_sheets, "expected a 4.x testcase-detail sheet in the workbook"
+    ws = wb[tc_sheets[0]]
+    ids = {ws.cell(r, 2).value for r in range(10, ws.max_row + 1)}
+    assert "UI_02" in ids and "FN_02" in ids   # testcase rows present, same source
+    # the unfilled template sample sheet was consumed (no duplicate 4.x sample)
+    assert len(tc_sheets) == 1
