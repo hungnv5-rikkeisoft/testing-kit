@@ -123,6 +123,9 @@ def main():
     ap.add_argument("--out", default="reports/test_report.xlsx")
     args = ap.parse_args()
 
+    if args.yaml and args.chrome:
+        ap.error("use either --yaml (Stage 3) or --chrome (JUnit path), not both")
+
     if args.yaml:
         data = build_report_from_yaml(args.yaml, args.template, args.out)
         s = data.summary

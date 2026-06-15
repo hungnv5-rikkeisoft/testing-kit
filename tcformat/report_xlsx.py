@@ -15,7 +15,7 @@ from tcformat.report_sheet import (
     REPORT_SHEET, find_header_row, clear_region, write_screen_row)
 
 EVIDENCE_SHEET = "Evidence"
-EVIDENCE_HEADERS = ["TestcaseID", "Browser", "Step", "Image", "Open full-size", "Note"]
+EVIDENCE_HEADERS = ["TestcaseID", "Browser", "Step", "Anh", "Mo full-size", "Note"]
 BROWSERS = ("chrome", "safari")
 MAX_IMG_WIDTH = 480  # px
 
@@ -83,7 +83,10 @@ def _write_evidence_sheet(wb, screens, base_dir, out_path):
                     ws.cell(row, 2).value = br_name
                     ws.cell(row, 3).value = f"step_{idx}"
                     img_abs = (Path(base_dir) / rel).resolve()
-                    link = os.path.relpath(img_abs, out_dir).replace("\\", "/")
+                    try:
+                        link = os.path.relpath(img_abs, out_dir).replace("\\", "/")
+                    except ValueError:        # different drive / mount on Windows
+                        link = img_abs.as_uri()
                     if img_abs.exists():
                         _embed(ws, row, 4, img_abs)
                     else:

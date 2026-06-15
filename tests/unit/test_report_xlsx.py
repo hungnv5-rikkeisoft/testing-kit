@@ -72,3 +72,41 @@ def test_missing_evidence_file_does_not_crash(tmp_path):
     ws = load_workbook(out)[EVIDENCE_SHEET]
     assert ws.cell(2, 4).value == "(file missing)"
     assert len(ws._images) == 0
+
+
+def test_hyperlink_falls_back_when_relpath_raises(tmp_path, monkeypatch):
+    import tcformat.report_xlsx as rx
+    rel = "evidence/basic-info/chrome/UI_02/step_1.png"
+    _png(tmp_path / rel)
+    sc = _screen(rel)
+    out = tmp_path / "reports" / "test_report.xlsx"
+
+    def boom(*a, **k):
+        raise ValueError("different drive")
+
+    monkeypatch.setattr(rx.os.path, "relpath", boom)
+    write_report(aggregate([sc]), [sc], TEMPLATE, str(out), base_dir=str(tmp_path))
+    ws = load_workbook(out)[EVIDENCE_SHEET]
+    assert ws.cell(2, 5).hyperlink is not None
+    assert ws.cell(2, 5).hyperlink.target.startswith("file:")
+
+
+def test_note_written_once_and_safari_evidence_rows(tmp_path):
+    rel1 = "evidence/s/safari/FN_01/step_1.png"
+    rel2 = "evidence/s/safari/FN_01/step_2.png"
+    _png(tmp_path / rel1)
+    _png(tmp_path / rel2)
+    sc = Screen(screen="S", test_level="IT", testcases=[
+        Testcase(id="FN_01", section="FUNCTION", main_item="x", type="IT",
+                 priority="High",
+                 result=Result(safari=BrowserResult(
+                     status="OK", note="safari note", evidence=[rel1, rel2]))),
+    ])
+    out = tmp_path / "reports" / "r.xlsx"
+    write_report(aggregate([sc]), [sc], TEMPLATE, str(out), base_dir=str(tmp_path))
+    ws = load_workbook(out)[EVIDENCE_SHEET]
+    assert ws.cell(2, 2).value == "safari"
+    assert ws.cell(2, 3).value == "step_1"
+    assert ws.cell(2, 6).value == "safari note"
+    assert ws.cell(3, 3).value == "step_2"
+    assert ws.cell(3, 6).value is None        # note only on the first step row
