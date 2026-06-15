@@ -15,14 +15,14 @@ Tài liệu thiết kế + strategy.xlsx
   ▼  testcases/<screen>.yaml  ◄──►  testcases/<screen>.xlsx (template sheet 4.x)
   │ Stage 2: CHẠY test case (agent + Playwright MCP, screenshot mỗi bước)  ✅ XONG
   ▼  điền result + evidence/<screen>/<browser>/<TestcaseID>/step_N.png
-  │ Stage 3: BÁO CÁO + đính kèm evidence          ⬜ CHƯA LÀM (đã có gen_report nền)
-  ▼  reports/test_report.xlsx (sheet "3. Test Report")
+  │ Stage 3: BÁO CÁO + đính kèm evidence          ✅ XONG
+  ▼  reports/test_report.xlsx (sheet "3. Test Report" + sheet "Evidence" nhúng ảnh)
 ```
 
 ## 2. Trạng thái hiện tại
 
-- **Test suite: 63 passed** (`./.venv/Scripts/python.exe -m pytest -q`).
-- Git: Stage 2 nằm trên branch `stage2-test-execution` (rẽ từ `main`). Stage 1 + nền ở `main`.
+- **Test suite: 74 passed** (`./.venv/Scripts/python.exe -m pytest -q`).
+- Git: Stage 3 nằm trên branch `stage3-reporting` (rẽ từ `main`). Stage 2 ở `stage2-test-execution`. Stage 1 + nền ở `main`.
   - `8ce9d0c` init → `4f9b6d6` toolkit nền → `df654e8` gen_report → `7c1612c` Stage 1 (trên main)
   - Branch `stage2-test-execution`: spec + plan + Task 1–6 (schema note, runlog, render result cols,
     flask dep, demo app, skill run-testcases). Chạy `git log --oneline` để xem chi tiết.
@@ -42,9 +42,21 @@ Tài liệu thiết kế + strategy.xlsx
   - Skill `.claude/skills/run-testcases/SKILL.md` — quy trình agent + Playwright MCP, screenshot mỗi step.
   - Đã chạy end-to-end thật lát cắt 4 testcase (UI_02, FN_02, FN_03, NF_04) trên Chrome → 6 ảnh
     `evidence/basic-information-input/chrome/<ID>/step_N.png` + result điền vào YAML + xlsx (tất cả OK).
+- **Stage 3** (báo cáo + evidence):
+  - `tcformat/report_data.py` — `aggregate(screens)` đếm OK/NG/N·A trên **lượt đã chạy** (status≠null),
+    map `priority`→severity (High/Medium/Low), dựng `toolkit.report.Summary` + áp cổng exit-criteria.
+  - `tcformat/report_sheet.py` — helper ghi sheet "3. Test Report" (find header / clear region /
+    write_screen_row) **dùng chung** với `scripts/gen_report.py` (đường JUnit refactor lại dùng helper này).
+  - `tcformat/report_xlsx.py` — `write_report()` ghi sheet "3. Test Report" (tổng hợp + khối exit-criteria
+    PASS/FAIL, pass-rate, executed/planned) và sheet **"Evidence"** (nhúng ảnh `add_image` + caption +
+    hyperlink mở full-size; ảnh thiếu file → "(file missing)", không crash).
+  - `scripts/gen_report.py --yaml <screen>.yaml` — đường CLI Stage 3, in tóm tắt và **exit non-zero nếu
+    cổng fail**. Đường `--chrome/--safari` (JUnit) cũ giữ nguyên.
+  - Đã chạy thật trên `basic-information-input.yaml`: executed 4/48, pass 100%, 6 ảnh nhúng, exit PASS.
 
 ### Chưa làm
-- **Stage 3** (xem mục 6) — đọc `result` từ YAML → gen_report + nhúng/đính kèm evidence.
+- (Tuỳ chọn) Chạy nốt các testcase còn lại / trên iPad-Safari bằng skill `run-testcases` rồi regenerate
+  báo cáo cuối. Hiện mới chạy 4 lượt Chrome nên độ phủ thực thi còn thấp (báo cáo ghi rõ executed/planned).
 
 ## 3. Môi trường (QUAN TRỌNG)
 
@@ -103,22 +115,26 @@ Tài liệu thiết kế + strategy.xlsx
 Ví dụ output Stage 1 đã chạy (regenerate được, đang gitignore):
 `testcases/basic-information-input.yaml` + `.xlsx` (24 testcase, coverage 100%).
 
-## 6. Việc tiếp theo: Stage 3 (báo cáo + đính kèm evidence)
+## 6. Stage 3 — báo cáo + đính kèm evidence (ĐÃ XONG)
 
-Stage 2 đã ghi `result` (status/tester/date/note/evidence cho chrome|safari) vào `testcases/<screen>.yaml`.
-Stage 3 đọc các `result` đó để sinh báo cáo team và đính kèm/nhúng evidence.
+Stage 2 ghi `result` (status/tester/date/note/evidence cho chrome|safari) vào `testcases/<screen>.yaml`.
+Stage 3 đọc các `result` đó → sinh báo cáo team + nhúng evidence. Cách dùng:
 
-**Gợi ý phạm vi Stage 3 (cần brainstorm + spec + plan như các stage trước):**
-1. Đọc `result` từ YAML (đã có `schema.load_screen`) → tổng hợp pass-rate, đếm OK/NG/N·A theo browser,
-   số bug, áp cổng exit-criteria (≥95% pass, 0 Critical/High) — tái dùng `toolkit/report`.
-2. Sinh/điền sheet "3. Test Report" của template từ YAML (hiện `gen_report.py` đi từ JUnit XML — cân nhắc
-   thêm đường đi từ YAML, hoặc map result YAML → cùng định dạng).
-3. Đính kèm evidence: nhúng ảnh `evidence/<screen>/<browser>/<id>/step_N.png` vào xlsx (openpyxl `add_image`)
-   hoặc liên kết đường dẫn; quyết định nhúng-thật vs link khi brainstorm.
-4. (Tuỳ chọn) chạy thêm các testcase còn lại / trên iPad-Safari bằng skill `run-testcases` trước khi báo cáo.
+```bash
+# Sinh báo cáo từ YAML (1 hoặc nhiều --yaml). Exit non-zero nếu cổng exit-criteria fail.
+./.venv/Scripts/python.exe scripts/gen_report.py --yaml testcases/basic-information-input.yaml \
+    --out reports/test_report.xlsx
+```
 
-**Bắt đầu Stage 3 bằng:** skill `superpowers:brainstorming` (chốt: nhúng ảnh vs link, nguồn dữ liệu YAML vs JUnit)
-→ `writing-plans` → `subagent-driven-development` (giống Stage 1/2).
+Output `reports/test_report.xlsx` là **MỘT workbook** chứa đủ (cùng nguồn YAML nên luôn đồng bộ):
+- sheet **"4.x &lt;screen&gt;"** — chi tiết testcase + cột result (tái dùng `render_xlsx.render_into`),
+- sheet **"3. Test Report"** — 1 dòng/màn hình + Total + khối exit-criteria PASS/FAIL, pass-rate, executed/planned,
+- sheet **"Evidence"** — mỗi ảnh-step 1 dòng: ID/browser/step, ảnh nhúng, hyperlink mở full-size, note.
+
+Quyết định thiết kế + chi tiết: spec/plan `...-stage3-report-evidence*`.
+
+**Việc tiếp theo (tuỳ chọn):** tăng độ phủ thực thi — chạy nốt testcase còn lại / trên iPad-Safari bằng
+skill `run-testcases`, rồi chạy lại lệnh trên để regenerate báo cáo cuối.
 
 **Chạy lại Stage 2 (tham chiếu):** start demo `./.venv/Scripts/python.exe demo/app.py` (127.0.0.1:5005),
 rồi dùng skill `run-testcases` với `testcases/basic-information-input.yaml`. Helper:

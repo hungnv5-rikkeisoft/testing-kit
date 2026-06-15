@@ -14,14 +14,18 @@ Usage:
 """
 from __future__ import annotations
 import argparse
+import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from openpyxl import load_workbook
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tcformat.report_sheet import (
+    REPORT_SHEET, find_header_row, clear_region, write_screen_row)
+
 DEFAULT_TEMPLATE = "template/Format test case + Test report.xlsx"
-REPORT_SHEET = "3. Test Report"
-HEADER_LABEL = "Function/Screen"
 
 
 def parse_junit(path) -> dict[str, dict]:
@@ -47,24 +51,6 @@ def _screen_name(classname: str) -> str:
     return classname.split(".")[-1] if classname else classname
 
 
-def _find_header_row(ws) -> int:
-    for r in range(1, 30):
-        if ws.cell(r, 2).value == HEADER_LABEL:
-            return r
-    raise ValueError(f"'{HEADER_LABEL}' header not found in sheet '{REPORT_SHEET}'")
-
-
-def _clear_region(ws, first_row: int, last_row: int, last_col: int = 11):
-    """Unmerge any ranges intersecting the body, then blank its cells, so leftover
-    template sample rows / Total row don't bleed into the generated report."""
-    for rng in list(ws.merged_cells.ranges):
-        if rng.min_row >= first_row and rng.max_row <= last_row:
-            ws.unmerge_cells(str(rng))
-    for r in range(first_row, last_row + 1):
-        for c in range(1, last_col + 1):
-            ws.cell(r, c).value = None
-
-
 def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
     """Write the Test Report xlsx. Returns the aggregated per-module rows."""
     chrome = parse_junit(chrome_junit) if chrome_junit else {}
@@ -73,10 +59,10 @@ def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
 
     wb = load_workbook(template_path)
     ws = wb[REPORT_SHEET]
-    hdr = _find_header_row(ws)
+    hdr = find_header_row(ws)
     data_start = hdr + 3  # header row + 2 sub-header rows, then data
 
-    _clear_region(ws, data_start, data_start + max(len(modules), 5) + 5)
+    clear_region(ws, data_start, data_start + max(len(modules), 5) + 5)
 
     rows = []
     totals = {"c": 4, "total": 0, "c_ok": 0, "c_ng": 0, "c_na": 0,
@@ -87,16 +73,7 @@ def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
         total = (c["ok"] + c["ng"] + c["na"]) or (s["ok"] + s["ng"] + s["na"])
         bugs = c["ng"] + s["ng"]
         row = data_start + i
-        ws.cell(row, 1).value = f"{i + 1}.0"
-        ws.cell(row, 2).value = _screen_name(cls)
-        ws.cell(row, 3).value = total
-        ws.cell(row, 4).value = c["ok"]
-        ws.cell(row, 5).value = c["ng"]
-        ws.cell(row, 6).value = c["na"]
-        ws.cell(row, 7).value = s["ok"]
-        ws.cell(row, 8).value = s["ng"]
-        ws.cell(row, 9).value = s["na"]
-        ws.cell(row, 10).value = bugs
+        write_screen_row(ws, row, i + 1, _screen_name(cls), total, c, s, bugs)
         rows.append({"screen": _screen_name(cls), "total": total,
                      "chrome": c, "safari": s, "bugs": bugs})
         totals["total"] += total
@@ -120,16 +97,50 @@ def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
     return {"rows": rows, "totals": totals}
 
 
+def build_report_from_yaml(yaml_paths, template_path, out_path, base_dir=".",
+                           project_name="Project Name"):
+    """Stage 3 path: aggregate testcase YAML(s) and write the report workbook.
+
+    Returns the ReportData (caller uses .exit_ok for the process exit code)."""
+    from tcformat.schema import load_screen
+    from tcformat.report_data import aggregate
+    from tcformat.report_xlsx import write_report
+    screens = [load_screen(p) for p in yaml_paths]
+    data = aggregate(screens)
+    write_report(data, screens, template_path, out_path, base_dir=base_dir,
+                 project_name=project_name)
+    return data
+
+
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--chrome", required=True,
-                    help="JUnit XML from the desktop/Chrome run")
+    ap.add_argument("--yaml", action="append", default=None,
+                    help="Stage 3: testcase YAML with results (repeatable)")
+    ap.add_argument("--chrome", default=None,
+                    help="JUnit XML from the desktop/Chrome run (JUnit path)")
     ap.add_argument("--safari", default=None,
                     help="JUnit XML from the iPad/Safari run (optional)")
     ap.add_argument("--template", default=DEFAULT_TEMPLATE)
     ap.add_argument("--out", default="reports/test_report.xlsx")
+    ap.add_argument("--project-name", dest="project_name", default="Project Name",
+                    help="project-name banner on the Record-of-Change sheet")
     args = ap.parse_args()
+
+    if args.yaml and args.chrome:
+        ap.error("use either --yaml (Stage 3) or --chrome (JUnit path), not both")
+
+    if args.yaml:
+        data = build_report_from_yaml(args.yaml, args.template, args.out,
+                                      project_name=args.project_name)
+        s = data.summary
+        print(f"Wrote report -> {args.out} (executed {data.executed}/{data.planned}, "
+              f"OK {s.passed} NG {s.failed}, pass {s.pass_rate:.0%}, "
+              f"exit {'PASS' if data.exit_ok else 'FAIL'})")
+        raise SystemExit(0 if data.exit_ok else 1)
+
+    if not args.chrome:
+        ap.error("provide --yaml (Stage 3) or --chrome (JUnit path)")
 
     result = build_report(args.template, args.chrome, args.safari, args.out)
     t = result["totals"]
