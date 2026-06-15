@@ -126,9 +126,12 @@ Stage 3 đọc các `result` đó → sinh báo cáo team + nhúng evidence. Cá
     --out reports/test_report.xlsx
 ```
 
-Output `reports/test_report.xlsx`: sheet **"3. Test Report"** (1 dòng/màn hình + Total + khối exit-criteria
-PASS/FAIL, pass-rate, executed/planned) và sheet **"Evidence"** (mỗi ảnh-step 1 dòng: ID/browser/step,
-ảnh nhúng, hyperlink mở full-size, note). Quyết định thiết kế + chi tiết: spec/plan `...-stage3-report-evidence*`.
+Output `reports/test_report.xlsx` là **MỘT workbook** chứa đủ (cùng nguồn YAML nên luôn đồng bộ):
+- sheet **"4.x &lt;screen&gt;"** — chi tiết testcase + cột result (tái dùng `render_xlsx.render_into`),
+- sheet **"3. Test Report"** — 1 dòng/màn hình + Total + khối exit-criteria PASS/FAIL, pass-rate, executed/planned,
+- sheet **"Evidence"** — mỗi ảnh-step 1 dòng: ID/browser/step, ảnh nhúng, hyperlink mở full-size, note.
+
+Quyết định thiết kế + chi tiết: spec/plan `...-stage3-report-evidence*`.
 
 **Việc tiếp theo (tuỳ chọn):** tăng độ phủ thực thi — chạy nốt testcase còn lại / trên iPad-Safari bằng
 skill `run-testcases`, rồi chạy lại lệnh trên để regenerate báo cáo cuối.

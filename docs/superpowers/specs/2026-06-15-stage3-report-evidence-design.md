@@ -159,4 +159,11 @@ trong vùng đang sửa, không refactor lan man.
 - Không sinh PDF/HTML báo cáo (chỉ xlsx).
 - Không chạy thêm testcase (đó là Stage 2, dùng skill `run-testcases` khi cần).
 - Không nhúng video / không nén ảnh nâng cao (chỉ resize giữ tỉ lệ đơn giản).
-- Không gộp sheet "4.x" testcase detail vào workbook báo cáo (giữ ở `testcases/<screen>.xlsx`).
+
+## 9. Cập nhật sau review (2026-06-15)
+
+Theo phản hồi: report và testcase ra 2 file rời rạc, khó kiểm tra và không đồng bộ. **Đã đổi:**
+`write_report` nay gọi `render_xlsx.render_into(wb, screens)` để chèn luôn sheet "4.x" testcase detail
+vào **cùng** workbook báo cáo → một file `reports/test_report.xlsx` chứa đủ "4.x" + "3. Test Report" +
+"Evidence", tất cả sinh từ cùng YAML nên luôn đồng bộ. `render()` cũ (Stage 1, ra `testcases/<screen>.xlsx`)
+vẫn giữ làm artifact soạn testcase, nhưng để kiểm tra kết quả cuối chỉ cần một file Stage 3.
