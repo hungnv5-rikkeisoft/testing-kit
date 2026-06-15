@@ -5,6 +5,7 @@ import yaml
 
 VALID_LEVELS = {"UT", "IT", "ST"}
 VALID_PRIORITIES = {"Low", "Medium", "High"}
+VALID_STATUSES = {"OK", "NG", "N/A"}
 
 
 class SchemaError(Exception):
@@ -17,6 +18,7 @@ class BrowserResult:
     bug_id: str | None = None
     tester: str | None = None
     date: str | None = None
+    note: str | None = None
     evidence: list = field(default_factory=list)
 
 
@@ -57,6 +59,7 @@ def _browser_result(d) -> BrowserResult:
     return BrowserResult(
         status=d.get("status"), bug_id=d.get("bug_id"),
         tester=d.get("tester"), date=d.get("date"),
+        note=d.get("note"),
         evidence=list(d.get("evidence") or []))
 
 
