@@ -18,10 +18,10 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 from openpyxl import load_workbook
+from tcformat.report_sheet import (
+    REPORT_SHEET, find_header_row, clear_region, write_screen_row)
 
 DEFAULT_TEMPLATE = "template/Format test case + Test report.xlsx"
-REPORT_SHEET = "3. Test Report"
-HEADER_LABEL = "Function/Screen"
 
 
 def parse_junit(path) -> dict[str, dict]:
@@ -47,24 +47,6 @@ def _screen_name(classname: str) -> str:
     return classname.split(".")[-1] if classname else classname
 
 
-def _find_header_row(ws) -> int:
-    for r in range(1, 30):
-        if ws.cell(r, 2).value == HEADER_LABEL:
-            return r
-    raise ValueError(f"'{HEADER_LABEL}' header not found in sheet '{REPORT_SHEET}'")
-
-
-def _clear_region(ws, first_row: int, last_row: int, last_col: int = 11):
-    """Unmerge any ranges intersecting the body, then blank its cells, so leftover
-    template sample rows / Total row don't bleed into the generated report."""
-    for rng in list(ws.merged_cells.ranges):
-        if rng.min_row >= first_row and rng.max_row <= last_row:
-            ws.unmerge_cells(str(rng))
-    for r in range(first_row, last_row + 1):
-        for c in range(1, last_col + 1):
-            ws.cell(r, c).value = None
-
-
 def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
     """Write the Test Report xlsx. Returns the aggregated per-module rows."""
     chrome = parse_junit(chrome_junit) if chrome_junit else {}
@@ -73,10 +55,10 @@ def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
 
     wb = load_workbook(template_path)
     ws = wb[REPORT_SHEET]
-    hdr = _find_header_row(ws)
+    hdr = find_header_row(ws)
     data_start = hdr + 3  # header row + 2 sub-header rows, then data
 
-    _clear_region(ws, data_start, data_start + max(len(modules), 5) + 5)
+    clear_region(ws, data_start, data_start + max(len(modules), 5) + 5)
 
     rows = []
     totals = {"c": 4, "total": 0, "c_ok": 0, "c_ng": 0, "c_na": 0,
@@ -87,16 +69,7 @@ def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
         total = (c["ok"] + c["ng"] + c["na"]) or (s["ok"] + s["ng"] + s["na"])
         bugs = c["ng"] + s["ng"]
         row = data_start + i
-        ws.cell(row, 1).value = f"{i + 1}.0"
-        ws.cell(row, 2).value = _screen_name(cls)
-        ws.cell(row, 3).value = total
-        ws.cell(row, 4).value = c["ok"]
-        ws.cell(row, 5).value = c["ng"]
-        ws.cell(row, 6).value = c["na"]
-        ws.cell(row, 7).value = s["ok"]
-        ws.cell(row, 8).value = s["ng"]
-        ws.cell(row, 9).value = s["na"]
-        ws.cell(row, 10).value = bugs
+        write_screen_row(ws, row, i + 1, _screen_name(cls), total, c, s, bugs)
         rows.append({"screen": _screen_name(cls), "total": total,
                      "chrome": c, "safari": s, "bugs": bugs})
         totals["total"] += total
