@@ -97,7 +97,8 @@ def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
     return {"rows": rows, "totals": totals}
 
 
-def build_report_from_yaml(yaml_paths, template_path, out_path, base_dir="."):
+def build_report_from_yaml(yaml_paths, template_path, out_path, base_dir=".",
+                           project_name="Project Name"):
     """Stage 3 path: aggregate testcase YAML(s) and write the report workbook.
 
     Returns the ReportData (caller uses .exit_ok for the process exit code)."""
@@ -106,7 +107,8 @@ def build_report_from_yaml(yaml_paths, template_path, out_path, base_dir="."):
     from tcformat.report_xlsx import write_report
     screens = [load_screen(p) for p in yaml_paths]
     data = aggregate(screens)
-    write_report(data, screens, template_path, out_path, base_dir=base_dir)
+    write_report(data, screens, template_path, out_path, base_dir=base_dir,
+                 project_name=project_name)
     return data
 
 
@@ -121,13 +123,16 @@ def main():
                     help="JUnit XML from the iPad/Safari run (optional)")
     ap.add_argument("--template", default=DEFAULT_TEMPLATE)
     ap.add_argument("--out", default="reports/test_report.xlsx")
+    ap.add_argument("--project-name", dest="project_name", default="Project Name",
+                    help="project-name banner on the Record-of-Change sheet")
     args = ap.parse_args()
 
     if args.yaml and args.chrome:
         ap.error("use either --yaml (Stage 3) or --chrome (JUnit path), not both")
 
     if args.yaml:
-        data = build_report_from_yaml(args.yaml, args.template, args.out)
+        data = build_report_from_yaml(args.yaml, args.template, args.out,
+                                      project_name=args.project_name)
         s = data.summary
         print(f"Wrote report -> {args.out} (executed {data.executed}/{data.planned}, "
               f"OK {s.passed} NG {s.failed}, pass {s.pass_rate:.0%}, "

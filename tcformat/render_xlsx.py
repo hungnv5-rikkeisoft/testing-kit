@@ -12,6 +12,18 @@ DATA_START = 10
 LAST_COL = 18  # through column R (Chrome+Safari result columns K..R)
 INVALID_TITLE = re.compile(r"[\[\]:\*\?/\\]")
 
+# The template's "1. Record of Change" sheet carries a sample project-name banner
+# (merged B14:O14). Overwrite it so the output isn't tied to the template's app.
+PROJECT_SHEET = "1. Record of Change"
+PROJECT_NAME_CELL = "B14"
+DEFAULT_PROJECT_NAME = "Project Name"
+
+
+def set_project_name(wb, project_name=DEFAULT_PROJECT_NAME) -> None:
+    """Set the project-name banner on the Record-of-Change sheet, if present."""
+    if PROJECT_SHEET in wb.sheetnames:
+        wb[PROJECT_SHEET][PROJECT_NAME_CELL] = project_name
+
 
 def _find_sample(wb):
     for ws in wb.worksheets:
@@ -73,13 +85,14 @@ def _write(ws, testcases, start: int):
     return row
 
 
-def render_into(wb, screens) -> None:
+def render_into(wb, screens, project_name=DEFAULT_PROJECT_NAME) -> None:
     """Render screens' testcase sheets into an already-open workbook.
 
     Clones the template's '4.1.*' sample sheet per screen, fills it, then removes
     the sample. Saving is left to the caller so a report workbook can hold the
     testcase detail, the summary, and evidence in one file.
     """
+    set_project_name(wb, project_name)
     sample = _find_sample(wb)
     for idx, screen in enumerate(screens, start=1):
         ws = wb.copy_worksheet(sample)
@@ -95,8 +108,8 @@ def render_into(wb, screens) -> None:
     wb.remove(sample)
 
 
-def render(screens, template_path, out_path) -> None:
+def render(screens, template_path, out_path, project_name=DEFAULT_PROJECT_NAME) -> None:
     wb = load_workbook(template_path)
-    render_into(wb, screens)
+    render_into(wb, screens, project_name)
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)

@@ -104,9 +104,10 @@ def _write_evidence_sheet(wb, screens, base_dir, out_path):
     return ws
 
 
-def write_report(report_data, screens, template_path, out_path, base_dir=".") -> None:
+def write_report(report_data, screens, template_path, out_path, base_dir=".",
+                 project_name="Project Name") -> None:
     wb = load_workbook(template_path)
-    render_into(wb, screens)               # "4.x" testcase-detail sheets (+ results)
+    render_into(wb, screens, project_name)  # "4.x" testcase-detail sheets (+ results)
     _write_report_sheet(wb[REPORT_SHEET], report_data)
     if EVIDENCE_SHEET in wb.sheetnames:
         del wb[EVIDENCE_SHEET]

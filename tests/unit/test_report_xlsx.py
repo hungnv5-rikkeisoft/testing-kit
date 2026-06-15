@@ -130,3 +130,17 @@ def test_unified_workbook_has_testcase_report_and_evidence(tmp_path):
     assert "UI_02" in ids and "FN_02" in ids   # testcase rows present, same source
     # the unfilled template sample sheet was consumed (no duplicate 4.x sample)
     assert len(tc_sheets) == 1
+
+
+def test_project_name_replaces_template_default(tmp_path):
+    rel = "evidence/basic-info/chrome/UI_02/step_1.png"
+    _png(tmp_path / rel)
+    sc = _screen(rel)
+    out = tmp_path / "reports" / "test_report.xlsx"
+    # default
+    write_report(aggregate([sc]), [sc], TEMPLATE, str(out), base_dir=str(tmp_path))
+    assert load_workbook(out)["1. Record of Change"]["B14"].value == "Project Name"
+    # custom
+    write_report(aggregate([sc]), [sc], TEMPLATE, str(out), base_dir=str(tmp_path),
+                 project_name="Acme Portal")
+    assert load_workbook(out)["1. Record of Change"]["B14"].value == "Acme Portal"

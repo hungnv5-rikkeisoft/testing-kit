@@ -79,7 +79,8 @@ Pass `--yaml` once per screen. The output `reports\test_report.xlsx` contains:
   image, a hyperlink to the original, and the note.
 
 The command prints a summary and exits non-zero if the exit-criteria gate fails
-(pass rate < 95% or any Critical/High bug).
+(pass rate < 95% or any Critical/High bug). Use `--project-name "Your Project"`
+to set the banner on sheet "1. Record of Change" (defaults to `Project Name`).
 
 **From JUnit XML (toolkit test runs).** Fills sheet "3. Test Report" from a
 pytest run's JUnit XML — one row per test file (module); status maps to OK
