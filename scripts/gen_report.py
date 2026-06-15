@@ -93,16 +93,42 @@ def build_report(template_path, chrome_junit, safari_junit, out_path) -> dict:
     return {"rows": rows, "totals": totals}
 
 
+def build_report_from_yaml(yaml_paths, template_path, out_path, base_dir="."):
+    """Stage 3 path: aggregate testcase YAML(s) and write the report workbook.
+
+    Returns the ReportData (caller uses .exit_ok for the process exit code)."""
+    from tcformat.schema import load_screen
+    from tcformat.report_data import aggregate
+    from tcformat.report_xlsx import write_report
+    screens = [load_screen(p) for p in yaml_paths]
+    data = aggregate(screens)
+    write_report(data, screens, template_path, out_path, base_dir=base_dir)
+    return data
+
+
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--chrome", required=True,
-                    help="JUnit XML from the desktop/Chrome run")
+    ap.add_argument("--yaml", action="append", default=None,
+                    help="Stage 3: testcase YAML with results (repeatable)")
+    ap.add_argument("--chrome", default=None,
+                    help="JUnit XML from the desktop/Chrome run (JUnit path)")
     ap.add_argument("--safari", default=None,
                     help="JUnit XML from the iPad/Safari run (optional)")
     ap.add_argument("--template", default=DEFAULT_TEMPLATE)
     ap.add_argument("--out", default="reports/test_report.xlsx")
     args = ap.parse_args()
+
+    if args.yaml:
+        data = build_report_from_yaml(args.yaml, args.template, args.out)
+        s = data.summary
+        print(f"Wrote report -> {args.out} (executed {data.executed}/{data.planned}, "
+              f"OK {s.passed} NG {s.failed}, pass {s.pass_rate:.0%}, "
+              f"exit {'PASS' if data.exit_ok else 'FAIL'})")
+        raise SystemExit(0 if data.exit_ok else 1)
+
+    if not args.chrome:
+        ap.error("provide --yaml (Stage 3) or --chrome (JUnit path)")
 
     result = build_report(args.template, args.chrome, args.safari, args.out)
     t = result["totals"]
