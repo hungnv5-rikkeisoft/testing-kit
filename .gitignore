@@ -19,6 +19,7 @@ htmlcov/
 # Generated outputs
 reports/
 checklists/
+evidence/
 
 # Real config (keep the *.example.yaml templates)
 config/config.yaml
