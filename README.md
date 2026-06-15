@@ -31,6 +31,40 @@ Critical/High bug is recorded.
 
 Output: `checklists/<sheet>.md`.
 
+## Generate project test cases (Stage 1)
+
+Draft test cases from design docs into the team xlsx format with strategy
+coverage. Driven by the `generate-testcases` skill (AI reads the design docs);
+the deterministic backbone lives in `tcformat/`:
+
+- `tcformat/schema.py`  — YAML test-case contract (`testcases/<screen>.yaml`)
+- `tcformat/strategy.py`— testing-object refs from `strategy.xlsx`
+- `tcformat/coverage.py`— checks every strategy object has a testcase
+- `tcformat/render_xlsx.py` — renders YAML → `testcases/<screen>.xlsx`
+  (template sheet "4.x")
+
+Invoke in Claude Code: run the `generate-testcases` skill and point it at the
+screen's design docs. Output: a reviewable YAML contract + the team-format xlsx,
+with a coverage summary.
+
+## Generate the team Test Report (xlsx)
+
+Fill the company template (`template/Format test case + Test report.xlsx`,
+sheet "3. Test Report") from a run's JUnit XML. One row per test file (module);
+status maps to OK (passed) / NG (failed) / N/A (skipped).
+
+    .venv\Scripts\python scripts\run.py --layer integration --reports reports\chrome
+    .venv\Scripts\python scripts\run.py --layer integration --tablet --reports reports\safari
+    .venv\Scripts\python scripts\gen_report.py ^
+        --chrome reports\chrome\integration-junit.xml ^
+        --safari reports\safari\integration-junit.xml ^
+        --out reports\test_report.xlsx
+
+`--safari` is optional (Chrome-only report if omitted). Note: the Chrome and
+Safari columns are filled from whichever JUnit XML you pass; to truly exercise
+both browsers, parametrize your project tests by device profile (see
+`config/devices.yaml` and `toolkit/browser.py`).
+
 ## Adapt to a new project
 
 1. Edit `config/config.yaml` (`base_url`, thresholds if different).

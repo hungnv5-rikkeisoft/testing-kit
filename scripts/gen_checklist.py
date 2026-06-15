@@ -1,46 +1,25 @@
 """Generate tester checklists from the strategy workbook.
 
-Reads the "Đối tượng testing" (object) + "Cách thức thực hiện và xác nhận" (how)
-columns of a strategy sheet and emits a Markdown checklist.
+Reads the testing objects of a strategy sheet (via tcformat.strategy) and emits
+a Markdown checklist.
 
 Usage:
-    python scripts/gen_checklist.py --xlsx strategy/strategy.xlsx \
-        --sheet 1_APITesting --title "API Testing" --out checklists/
+    python scripts/gen_checklist.py --sheet 1_APITesting --title "API Testing"
 """
 from __future__ import annotations
 import argparse
+import sys
 from pathlib import Path
-from openpyxl import load_workbook
 
-# Column letters that hold the object name / the "how" description per strategy layout.
-OBJECT_COL = "C"
-HOW_COL = "J"
-HEADER_TOKEN = "Đối tượng testing"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tcformat.strategy import list_objects
 
 
 def extract_objects(xlsx_path, sheet_name: str) -> list[dict]:
-    wb = load_workbook(xlsx_path, data_only=True)
-    ws = wb[sheet_name]
-    objects: list[dict] = []
-    header_seen = False
-    for row in range(1, ws.max_row + 1):
-        cval = ws[f"{OBJECT_COL}{row}"].value
-        if cval is None:
-            continue
-        text = str(cval).strip()
-        if HEADER_TOKEN in text:
-            header_seen = True
-            continue
-        if not header_seen:
-            continue
-        # A row is a testing object only if column A has an STT number.
-        stt = ws[f"A{row}"].value
-        if stt is None or not str(stt).strip().split(".")[0].isdigit():
-            continue
-        how = ws[f"{HOW_COL}{row}"].value
-        objects.append({"object": text,
-                        "how": str(how).strip() if how else ""})
-    return objects
+    """Back-compat shim: {object, how} pairs for a sheet."""
+    return [{"object": o["object"], "how": o["how"]}
+            for o in list_objects(xlsx_path, sheet_name)]
 
 
 def render_markdown(title: str, objects: list[dict]) -> str:
@@ -48,8 +27,7 @@ def render_markdown(title: str, objects: list[dict]) -> str:
     for o in objects:
         lines.append(f"- [ ] **{o['object']}**")
         if o["how"]:
-            how = o["how"].replace("\n", " ")
-            lines.append(f"  - {how}")
+            lines.append(f"  - {o['how'].replace(chr(10), ' ')}")
     lines.append("")
     return "\n".join(lines)
 

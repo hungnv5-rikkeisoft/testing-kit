@@ -33,3 +33,4 @@ playwright-report/
 Thumbs.db
 .idea/
 .vscode/
+testcases/
