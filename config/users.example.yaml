@@ -1,0 +1,5 @@
+# Copy to config/users.yaml. Accounts used for permission tests (strategy sheet 2.3.3 / 3.3.2).
+users:
+  admin:   { username: admin@example.com, password: CHANGE_ME, role: admin }
+  user_a:  { username: a@example.com,     password: CHANGE_ME, role: user }
+  user_b:  { username: b@example.com,     password: CHANGE_ME, role: user }

@@ -1,0 +1,9 @@
+# Copy to config/config.yaml and edit per project.
+base_url: http://localhost:5173
+thresholds:
+  api_ms: 600          # API response budget (strategy: < 600ms)
+  web_response_ms: 1500 # web server response budget (< 1.5s)
+  page_load_ms: 2500    # full page load budget (< 2.5s)
+exit_criteria:
+  min_pass_rate: 0.95
+  block_severities: [Critical, High]

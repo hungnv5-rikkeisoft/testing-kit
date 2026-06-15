@@ -1,0 +1,11 @@
+# Device matrix from strategy sheet 4 "Moi truong & Thiet bi".
+devices:
+  - name: desktop_1920_chrome   # primary: full GUI + Function
+    engine: chromium
+    viewport: { width: 1920, height: 1080 }
+    primary: true
+  - name: ipad_gen5_safari      # secondary: ~25% selective
+    engine: webkit
+    viewport: { width: 1536, height: 2048 }
+    primary: false
+    marker: tablet
