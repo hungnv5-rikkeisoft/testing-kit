@@ -33,6 +33,19 @@ def _clear(ws, first: int, last: int):
             ws.cell(r, c).value = None
 
 
+def _write_result(ws, row, result):
+    """Fill result columns K..R from a Result (blank when value is None)."""
+    cols = [
+        (11, result.chrome.status), (12, result.chrome.bug_id),
+        (13, result.chrome.tester), (14, result.chrome.date),
+        (15, result.safari.status), (16, result.safari.bug_id),
+        (17, result.safari.tester), (18, result.safari.date),
+    ]
+    for c, v in cols:
+        if v is not None:
+            ws.cell(row, c).value = v
+
+
 def _write(ws, testcases, start: int):
     row = start
     no = 0
@@ -55,6 +68,7 @@ def _write(ws, testcases, start: int):
             f"{i + 1}. {e}" for i, e in enumerate(tc.expected))
         ws.cell(row, 9).value = tc.type
         ws.cell(row, 10).value = tc.priority
+        _write_result(ws, row, tc.result)
         row += 1
     return row
 
