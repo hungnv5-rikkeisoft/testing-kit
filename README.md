@@ -4,6 +4,28 @@ Reusable Python + Playwright toolkit automating the project test strategy
 (API, Integration/UI, System) with auto-generated checklists, HTML/JUnit
 reports, and an exit-criteria gate (strategy sheet 6).
 
+## Slash commands (Claude Code)
+
+Inside Claude Code you can drive the whole pipeline with `/tk:*` commands instead
+of typing the CLI by hand. They live in `.claude/commands/tk/` (committed, shared)
+and wrap the exact commands documented below.
+
+| Command | Does | Wraps |
+|---------|------|-------|
+| `/tk:setup [--force]` | venv + deps + Playwright browsers + config copy | [Setup](#setup) |
+| `/tk:checklists [sheet]` | Generate checklists (all three layers, or one sheet) | [Generate checklists](#generate-checklists) |
+| `/tk:testcases <screen> [docs]` | **Stage 1** — draft test cases from design docs | `generate-testcases` skill |
+| `/tk:run <screen> [chrome\|safari]` | **Stage 2** — execute test cases, capture evidence | `run-testcases` skill |
+| `/tk:report <screen…> [--project-name] [--out]` | **Stage 3** — build the team report xlsx | `gen_report.py` |
+| `/tk:test <layer> [--tablet]` | Run the toolkit pytest suite for a layer | `scripts/run.py` |
+| `/tk:pipeline <screen> [docs] [browser]` | Full Stage 1 → 2 → 3 end to end (pauses for review after Stage 1) | the whole chain |
+
+Screen arguments accept a bare name (resolved to `testcases/<screen>.yaml`) or an
+explicit path. The report/test/pipeline commands preserve the exit-criteria gate —
+a failed gate (pass rate < 95% or any Critical/High bug) is reported as a failure.
+
+The raw CLI below remains the source of truth and works outside Claude Code.
+
 ## Setup
 
     py -3.13 -m venv .venv
