@@ -21,17 +21,19 @@ Tài liệu thiết kế + strategy.xlsx
 
 ## 2. Trạng thái hiện tại
 
-- **Test suite: 74 passed** (`./.venv/Scripts/python.exe -m pytest -q`).
+- **Test suite: 47 passed** (`./.venv/Scripts/python.exe -m pytest -q`).
 - Git: Stage 3 nằm trên branch `stage3-reporting` (rẽ từ `main`). Stage 2 ở `stage2-test-execution`. Stage 1 + nền ở `main`.
   - `8ce9d0c` init → `4f9b6d6` toolkit nền → `df654e8` gen_report → `7c1612c` Stage 1 (trên main)
   - Branch `stage2-test-execution`: spec + plan + Task 1–6 (schema note, runlog, render result cols,
     flask dep, demo app, skill run-testcases). Chạy `git log --oneline` để xem chi tiết.
 
 ### Đã hoàn thành
-- **Nền tảng** (`toolkit/`): config (YAML, ngưỡng chiến lược), browser (Playwright + device profiles),
-  api_client (status/schema/<600ms/business-code), checks (ui/security/perf), report (exit-criteria).
-  `conftest.py` sinh `reports/summary.json` + cổng exit-criteria. `scripts/run.py` CLI chạy theo layer.
-- **Báo cáo** (`scripts/gen_report.py`): JUnit XML → điền sheet "3. Test Report" của template.
+- **Nền tảng** (`toolkit/`): `config.py` (YAML, ngưỡng chiến lược) + `report.py` (`Summary` + cổng
+  exit-criteria), dùng lại bởi `tcformat/report_data.py`.
+  > Lưu ý: lớp pytest-theo-layer cũ (`scripts/run.py`, `conftest.py`, `toolkit/browser|api_client|checks`,
+  > `tests/{api,integration,system,demo}`) **đã bị gỡ** — không phải kiến trúc hiện tại. Việc chạy test
+  > giờ do skill `run-testcases` (Playwright MCP) đảm nhiệm, không qua pytest.
+- **Báo cáo** (`scripts/gen_report.py --yaml`): đọc result trong YAML → điền workbook template (Stage 3).
 - **Stage 1** (`tcformat/`): schema YAML, strategy refs, coverage, render xlsx + skill `generate-testcases`.
   Đã chạy thử end-to-end: 1 màn hình mẫu → 24 testcase, coverage 100%, xlsx đúng format.
 - **Stage 2** (chạy test case + evidence):
@@ -46,12 +48,12 @@ Tài liệu thiết kế + strategy.xlsx
   - `tcformat/report_data.py` — `aggregate(screens)` đếm OK/NG/N·A trên **lượt đã chạy** (status≠null),
     map `priority`→severity (High/Medium/Low), dựng `toolkit.report.Summary` + áp cổng exit-criteria.
   - `tcformat/report_sheet.py` — helper ghi sheet "3. Test Report" (find header / clear region /
-    write_screen_row) **dùng chung** với `scripts/gen_report.py` (đường JUnit refactor lại dùng helper này).
+    write_screen_row), dùng bởi `tcformat/report_xlsx.py`.
   - `tcformat/report_xlsx.py` — `write_report()` ghi sheet "3. Test Report" (tổng hợp + khối exit-criteria
     PASS/FAIL, pass-rate, executed/planned) và sheet **"Evidence"** (nhúng ảnh `add_image` + caption +
     hyperlink mở full-size; ảnh thiếu file → "(file missing)", không crash).
-  - `scripts/gen_report.py --yaml <screen>.yaml` — đường CLI Stage 3, in tóm tắt và **exit non-zero nếu
-    cổng fail**. Đường `--chrome/--safari` (JUnit) cũ giữ nguyên.
+  - `scripts/gen_report.py --yaml <screen>.yaml` — đường CLI Stage 3 (duy nhất), in tóm tắt và **exit
+    non-zero nếu cổng fail**.
   - Đã chạy thật trên `basic-information-input.yaml`: executed 4/48, pass 100%, 6 ảnh nhúng, exit PASS.
 
 ### Chưa làm
@@ -63,17 +65,16 @@ Tài liệu thiết kế + strategy.xlsx
 - Máy Windows, project ở **ổ D:** (`d:\Testing-kit`). Temp của Python ở **ổ C:** → lưu ý
   lỗi cross-drive khi viết test dùng `tmp_path` chạy pytest subprocess (xem `tests/unit/test_conftest_summary.py`
   đã xử lý bằng cách root temp dir trong repo).
-- **Có 2 Python:** bare `python` = 3.14 (THIẾU wheel cho playwright/pytest-httpserver). PHẢI dùng
+- **Có 2 Python:** bare `python` = 3.14 (một số wheel có thể thiếu). Dùng
   **venv 3.13** đã tạo sẵn: `d:/Testing-kit/.venv/Scripts/python.exe`. Mọi lệnh python/pytest dùng đường dẫn này.
 - Nếu `.venv` bị xóa, tạo lại:
   ```
   py -3.13 -m venv .venv
   ./.venv/Scripts/python.exe -m pip install -r requirements.txt
-  ./.venv/Scripts/python.exe -m playwright install chromium webkit
   ```
+  (Stage 2 dùng Playwright **MCP**, không cài package Python playwright.)
 - Scripts trong `scripts/` tự thêm repo-root vào `sys.path` để import `tcformat` khi chạy trực tiếp.
-- IDE có thể báo "Cannot find module pytest/playwright" — đó là false positive (VS Code trỏ Python 3.14), bỏ qua.
-- httpserver test ép IPv4 (`tests/api/conftest.py`) để tránh độ trễ ~2s IPv6 loopback của Windows.
+- IDE có thể báo "Cannot find module pytest" — đó là false positive (VS Code trỏ Python 3.14), bỏ qua.
 
 ## 4. Cấu trúc & file chính
 
@@ -86,8 +87,8 @@ Tài liệu thiết kế + strategy.xlsx
 | `tcformat/coverage.py` | `check_coverage(screen, refs)` → covered/missing/unknown |
 | `tcformat/render_xlsx.py` | `render(screens, template, out)` → xlsx sheet "4.x" |
 | `.claude/skills/generate-testcases/SKILL.md` | Quy trình AI sinh test case (Stage 1) |
-| `toolkit/` | Helpers tái dùng cho Stage 2 (browser/checks) + báo cáo |
-| `scripts/run.py`, `gen_report.py` | CLI chạy test / báo cáo |
+| `toolkit/` | Core dùng chung: `config.py` (ngưỡng) + `report.py` (exit-criteria) |
+| `scripts/gen_report.py` | CLI Stage 3: YAML → workbook báo cáo |
 | `docs/superpowers/specs/`, `docs/superpowers/plans/` | Spec & plan từng stage |
 
 **Thư mục sinh tự động (gitignore):** `reports/`, `testcases/`, `.venv/`.
@@ -95,15 +96,11 @@ Tài liệu thiết kế + strategy.xlsx
 ## 5. Lệnh hay dùng
 
 ```bash
-# Chạy toàn bộ test
+# Chạy toàn bộ unit test của framework
 ./.venv/Scripts/python.exe -m pytest -q
 
-# Chạy theo layer + xuất báo cáo
-./.venv/Scripts/python.exe scripts/run.py --layer integration
-./.venv/Scripts/python.exe scripts/run.py --layer integration --tablet
-
-# JUnit -> sheet "3. Test Report"
-./.venv/Scripts/python.exe scripts/gen_report.py --chrome reports/integration-junit.xml --out reports/test_report.xlsx
+# Stage 3: YAML -> báo cáo team (sheet "3. Test Report" + "Evidence")
+./.venv/Scripts/python.exe scripts/gen_report.py --yaml testcases/basic-information-input.yaml --out reports/test_report.xlsx
 
 # Stage 1: sinh test case (dùng skill generate-testcases trong Claude Code, hoặc thủ công)
 ./.venv/Scripts/python.exe -c "from tcformat.schema import load_screen; from tcformat.render_xlsx import render; from tcformat.coverage import check_coverage; from tcformat.strategy import list_objects; sc=load_screen('testcases/<screen>.yaml'); render([sc],'template/Format test case + Test report.xlsx','testcases/<screen>.xlsx'); refs={o['ref'] for o in list_objects('strategy/strategy.xlsx','2_IntergrationTesting') if o['ref']}; rep=check_coverage(sc,refs); print('missing',sorted(rep.missing),'unknown',sorted(rep.unknown))"

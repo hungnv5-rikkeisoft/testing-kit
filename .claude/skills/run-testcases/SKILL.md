@@ -39,10 +39,9 @@ deterministic helper `tcformat.runlog`.
    - A step is not automatable in this environment (compare to Figma, inspect
      DevTools Styles, measure browser memory) → status `N/A` with a `--note` giving
      the reason; still screenshot whatever is visible.
-6. Optional deterministic aux checks (hybrid keyword) via `toolkit/checks` when they
-   sharpen a verdict: console-clean for NF_01, response/load timing for NF_02/NF_03,
-   XSS-safe echo for NF_04. Use `browser_console_messages` / `browser_network_requests`
-   to gather evidence for these.
+6. Optional deterministic aux checks when they sharpen a verdict: console-clean for
+   NF_01, response/load timing for NF_02/NF_03, XSS-safe echo for NF_04. Use
+   `browser_console_messages` / `browser_network_requests` to gather evidence for these.
 7. Record the result (one call per testcase per browser):
    ```
    ./.venv/Scripts/python.exe -m tcformat.runlog record \

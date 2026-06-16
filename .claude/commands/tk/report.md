@@ -30,7 +30,3 @@ Steps:
 The output workbook contains: sheet **"4.x <screen>"** (testcase detail + results),
 sheet **"3. Test Report"** (per-screen rows, totals, exit-criteria block), and sheet
 **"Evidence"** (one row per screenshot).
-
-> JUnit variant: for toolkit pytest runs, build the report from JUnit XML instead with
-> `--chrome reports\chrome\<layer>-junit.xml [--safari ...]`. `--yaml` and `--chrome`
-> are mutually exclusive. Use `/tk:test` to produce those JUnit files first.

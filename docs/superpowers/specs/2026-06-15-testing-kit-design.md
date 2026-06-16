@@ -5,6 +5,13 @@
 - **Nguồn căn cứ:** `strategy/strategy.xlsx` (Chiến lược kiểm thử CLKT v1.0.0) + plugin `webapp-testing` (Python Playwright)
 - **Trạng thái:** Đã duyệt thiết kế, chờ review spec
 
+> ⚠️ **LỖI THỜI (point-in-time).** Mô hình thực thi "pytest theo layer" mô tả ở đây
+> (`scripts/run.py`, `conftest.py`, `toolkit/browser|api_client|checks`,
+> `tests/{api,integration,system}`) **đã bị gỡ khỏi codebase**. Việc chạy test giờ
+> do pipeline 3-stage skill-driven đảm nhiệm (Stage 2 = `run-testcases` qua Playwright
+> MCP). Tài liệu này giữ lại làm hồ sơ thiết kế; xem `CLAUDE.md`/`HANDOFF.md` cho kiến
+> trúc hiện hành.
+
 ## 1. Mục tiêu
 
 Xây dựng một **framework tái sử dụng** (config-driven) bằng **Python + Playwright** để tự động hóa kiểm thử web app theo đúng Chiến lược kiểm thử của dự án, bao trùm 4 phần:

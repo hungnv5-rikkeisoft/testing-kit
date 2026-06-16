@@ -1,8 +1,9 @@
 # Testing-Kit
 
-Reusable Python + Playwright toolkit automating the project test strategy
-(API, Integration/UI, System) with HTML/JUnit reports and an exit-criteria
-gate (strategy sheet 6).
+Reusable Python + Playwright toolkit automating the project test strategy as a
+**3-stage, skill-driven pipeline** (generate → run → report) joined by one YAML
+test-case format, producing the team xlsx report with an exit-criteria gate
+(strategy sheet 6).
 
 ## Slash commands (Claude Code)
 
@@ -16,11 +17,10 @@ and wrap the exact commands documented below.
 | `/tk:testcases <screen> [docs]` | **Stage 1** — draft test cases from design docs | `generate-testcases` skill |
 | `/tk:run <screen> [chrome\|safari]` | **Stage 2** — execute test cases, capture evidence | `run-testcases` skill |
 | `/tk:report <screen…> [--project-name] [--out]` | **Stage 3** — build the team report xlsx | `gen_report.py` |
-| `/tk:test <layer> [--tablet]` | Run the toolkit pytest suite for a layer | `scripts/run.py` |
 | `/tk:pipeline <screen> [docs] [browser]` | Full Stage 1 → 2 → 3 end to end (pauses for review after Stage 1) | the whole chain |
 
 Screen arguments accept a bare name (resolved to `testcases/<screen>.yaml`) or an
-explicit path. The report/test/pipeline commands preserve the exit-criteria gate —
+explicit path. The report/pipeline commands preserve the exit-criteria gate —
 a failed gate (pass rate < 95% or any Critical/High bug) is reported as a failure.
 
 The raw CLI below remains the source of truth and works outside Claude Code.
@@ -29,20 +29,18 @@ The raw CLI below remains the source of truth and works outside Claude Code.
 
     py -3.13 -m venv .venv
     .venv\Scripts\python -m pip install -r requirements.txt
-    .venv\Scripts\python -m playwright install chromium webkit
     copy config\config.example.yaml config\config.yaml   # then edit base_url
     copy config\users.example.yaml  config\users.yaml     # for permission tests
 
-## Run
+Stage 2 drives the browser through the **Playwright MCP** server (not a Python
+package); see `/tk:setup` to verify it is connected.
 
-    .venv\Scripts\python scripts\run.py --layer integration   # desktop 1920 Chrome
-    .venv\Scripts\python scripts\run.py --layer integration --tablet  # include iPad/Safari subset
-    .venv\Scripts\python scripts\run.py --layer api
-    .venv\Scripts\python scripts\run.py --layer system
+## Run the pipeline
 
-Reports land in `reports/` (`*.html`, `*-junit.xml`, `*-summary.json`).
-The run prints `[exit-criteria] FAILED` if pass rate < 95% or any
-Critical/High bug is recorded.
+Drive the three stages with the `/tk:*` commands (table above) or directly:
+Stage 1 via the `generate-testcases` skill, Stage 2 via the `run-testcases`
+skill, Stage 3 via `scripts/gen_report.py --yaml` (see below). The framework's
+own unit suite runs with `.venv\Scripts\python -m pytest -q`.
 
 ## Generate project test cases (Stage 1)
 
@@ -74,9 +72,8 @@ Playwright MCP, taking a screenshot per step):
 
 ## Generate the team Test Report (xlsx)
 
-**From test-case YAML (Stage 3 — recommended).** Reads the `result` fields Stage 2
-wrote and produces ONE workbook from the company template, all in sync from the
-same YAML:
+Reads the `result` fields Stage 2 wrote and produces ONE workbook from the
+company template, all in sync from the same YAML:
 
     .venv\Scripts\python scripts\gen_report.py ^
         --yaml testcases\basic-information-input.yaml ^
@@ -94,29 +91,14 @@ Pass `--yaml` once per screen. The output `reports\test_report.xlsx` contains:
 The command prints a summary and exits non-zero if the exit-criteria gate fails
 (pass rate < 95% or any Critical/High bug). Use `--project-name "Your Project"`
 to set the banner on sheet "1. Record of Change" (defaults to `Project Name`).
-
-**From JUnit XML (toolkit test runs).** Fills sheet "3. Test Report" from a
-pytest run's JUnit XML — one row per test file (module); status maps to OK
-(passed) / NG (failed) / N/A (skipped):
-
-    .venv\Scripts\python scripts\run.py --layer integration --reports reports\chrome
-    .venv\Scripts\python scripts\run.py --layer integration --tablet --reports reports\safari
-    .venv\Scripts\python scripts\gen_report.py ^
-        --chrome reports\chrome\integration-junit.xml ^
-        --safari reports\safari\integration-junit.xml ^
-        --out reports\test_report.xlsx
-
-`--safari` is optional (Chrome-only report if omitted). `--yaml` and `--chrome`
-are mutually exclusive. Note: the Chrome and Safari columns are filled from
-whichever JUnit XML you pass; to truly exercise both browsers, parametrize your
-project tests by device profile (see `config/devices.yaml` and
-`toolkit/browser.py`).
+The Chrome and Safari report columns come from `result.chrome` / `result.safari`
+in the YAML, written by Stage 2.
 
 ## Adapt to a new project
 
 1. Edit `config/config.yaml` (`base_url`, thresholds if different).
 2. Edit `config/devices.yaml` if the device matrix changes.
-3. Replace the example tests in `tests/api`, `tests/integration`, `tests/system` with your own, reusing helpers from `toolkit/`.
+3. Generate the screen's test cases (Stage 1), run them against your app (Stage 2), and report (Stage 3) — no framework code changes needed.
 
 ## Thresholds (from strategy)
 

@@ -9,6 +9,7 @@ Draft project test cases from design documents into the shared YAML contract,
 then render the team-format xlsx and verify 100% strategy coverage.
 
 ## Inputs you gather first
+
 1. Design docs for the screen: text/markdown spec, business rules, DB/API design.
 2. Figma or screenshot images (read them multimodally if provided).
 3. Strategy testing objects for the relevant level(s):
@@ -16,7 +17,8 @@ then render the team-format xlsx and verify 100% strategy coverage.
    (swap the sheet for 1_APITesting / 3_System_Testing as needed).
 
 ## Process
-1. For EACH strategy testing object relevant to the screen, write at least one
+
+1. For EACH strategy testing object relevant to the screen, write full
    testcase whose `strategy_ref` equals that object's `ref` (e.g. "2.3.1#1").
    Add screen-specific cases beyond the strategy objects where the design warrants.
 2. Each testcase follows the schema in `tcformat/schema.py`: id, section
@@ -42,6 +44,7 @@ then render the team-format xlsx and verify 100% strategy coverage.
    are empty.
 
 ## Output
+
 - `testcases/<screen-slug>.yaml` (the contract, reviewable/diffable)
 - `testcases/<screen-slug>.xlsx` (team format, sheet "4.x <screen>")
 - A short coverage summary (objects covered, any screen-specific extras)

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Goals
 
-**Testing-Kit** is a reusable, config-driven test-automation framework built with **Python + Playwright + pytest**. It automates web-app testing per the project's test strategy (`strategy/strategy.xlsx`, "Chiến lược kiểm thử CLKT v1.0.0") and covers four areas:
+**Testing-Kit** is a reusable, config-driven test-automation framework built with **Python + Playwright**. It automates web-app testing per the project's test strategy (`strategy/strategy.xlsx`, "Chiến lược kiểm thử CLKT v1.0.0") and covers four areas:
 
 1. **Integration / UI testing** (strategy sheet `2_IntergrationTesting`)
 2. **System testing — user flows** (sheet `3_System_Testing`)
@@ -17,42 +17,47 @@ Core principle: the framework is **not tied to any one app**. Switching projects
 
 ## Current State
 
-The repo is currently **design-phase**: it contains the approved design spec and source spreadsheets, but **no code has been implemented yet**.
+The framework is **implemented as a 3-stage, skill-driven pipeline** around a shared YAML test-case format. See `HANDOFF.md` for the full status and the per-stage specs/plans under `docs/superpowers/`.
 
-- `docs/superpowers/specs/2026-06-15-testing-kit-design.md` — the authoritative design spec (in Vietnamese). **Read this before implementing anything.**
+- `docs/superpowers/specs/2026-06-15-testing-kit-design.md` — the original design spec (in Vietnamese). Note: the pytest-per-layer execution model in older specs has been **removed** in favour of the skill-driven pipeline below.
 - `strategy/strategy.xlsx` — the test strategy that drives thresholds and the device matrix.
 - `template/Format test case + Test report.xlsx` — the required test-case / test-report output format.
 
-When building, follow the directory layout, component interfaces, and Definition of Done in §4–§10 of the design spec rather than inventing a new structure.
+## Architecture
 
-## Planned Architecture
-
-Data flow (per spec §6):
+The framework is a **3-stage pipeline** joined by one YAML test-case contract (`testcases/<screen>.yaml`):
 
 ```
-config.yaml ─► pytest fixtures (browser/device/user) ─► tests call toolkit.checks.* & api_client
-            ─► results ─► pytest collector ─► reports/ (HTML/JUnit/JSON) ─► exit-criteria gate
+design docs + strategy.xlsx
+  │ Stage 1 — generate test cases (generate-testcases skill, AI hybrid)
+  ▼  testcases/<screen>.yaml  ◄──►  testcases/<screen>.xlsx (template sheet 4.x)
+  │ Stage 2 — run test cases (run-testcases skill: agent + Playwright MCP, screenshot/step)
+  ▼  result + evidence/<screen>/<browser>/<TestcaseID>/step_N.png written back into the YAML
+  │ Stage 3 — report + embed evidence (scripts/gen_report.py --yaml)
+  ▼  reports/test_report.xlsx (sheet "3. Test Report" + "Evidence", exit-criteria gate)
 ```
 
-- `toolkit/` is the reusable core library: `config.py` (load/validate YAML), `browser.py` (Playwright fixtures + device profiles), `api_client.py` (status/schema/timing assertions), and `checks/` (`ui_checks`, `security_checks`, `perf_checks`).
-- `tests/` holds per-project tests plus samples that run against `tests/fixtures/sample.html` — **toolkit helpers must be testable without a real app** (file:// or a static server).
-- `conftest.py` provides shared fixtures and a `pytest_sessionfinish` hook that aggregates results into `reports/summary.json` and enforces the exit-criteria gate (non-zero exit on failure).
-- `scripts/` holds the CLI orchestrator (`run.py`) and `with_server.py` (server lifecycle, reused from the `webapp-testing` plugin).
+- `tcformat/` is the deterministic backbone: `schema.py` (YAML contract), `strategy.py` (strategy refs), `coverage.py`, `render_xlsx.py`, `runlog.py` (Stage 2 result/evidence bookkeeping), `report_data.py`/`report_sheet.py`/`report_xlsx.py` (Stage 3 aggregation + workbook).
+- `toolkit/` is the small shared core: `config.py` (load/validate YAML + thresholds) and `report.py` (`Summary` + exit-criteria evaluation), reused by `tcformat/report_data.py`.
+- `scripts/` holds `gen_report.py` (Stage 3 CLI) and `with_server.py` (server lifecycle helper, reused from the `webapp-testing` plugin).
+- `demo/app.py` is a Flask app standing in for the app-under-test in Stage 2.
+- `tests/unit/` holds the framework's own pytest unit tests (covering `tcformat/` and `toolkit/`); they need no running app.
 
 ## Key Thresholds & Gates (from the strategy)
 
 These are encoded as config defaults, not hard-coded values — but they are the source of truth:
 
 - API response `< 600ms`; web response `< 1.5s`; page load `< 2.5s`.
-- **Exit criteria:** `>= 95%` pass rate **and** `0` Critical/High bugs. The pytest session must exit non-zero if either fails.
-- **Device matrix (sheet 4):** Desktop FULL HD 1920px / Windows / Chrome (chromium) for full GUI+function; iPad gen5 / Safari (webkit) / 1536×2048, marked `@pytest.mark.tablet` for a ~25% selective subset.
+- **Exit criteria:** `>= 95%` pass rate **and** `0` Critical/High bugs. The Stage 3 report (`gen_report.py --yaml`) exits non-zero if either fails (gate in `tcformat/report_data.py` via `toolkit.report`/`toolkit.config`).
+- **Device matrix (sheet 4):** Desktop FULL HD 1920px / Windows / Chrome (chromium) for full GUI+function; iPad gen5 / Safari (webkit) / 1536×2048 for a ~25% selective subset. Per-screen results are recorded in the YAML under `result.chrome` / `result.safari`.
 - **API code rules (sheet 1.3.3):** 200 → validate required/optional response body; 400/401/403 → check code + completeness only; business errors 1–99 ride on HTTP 200 with a code header.
 
-## Definition of Done (spec §10)
+## Definition of Done
 
-- `pip install -r requirements.txt` + `playwright install` succeed.
-- `pytest` runs the sample suite green against `sample.html` and produces a full `reports/`.
-- `README.md` documents how to configure a new project and run each layer.
+- `pip install -r requirements.txt` succeeds (Stage 2 uses the Playwright MCP server, no Python Playwright dep).
+- `pytest` runs the framework's unit suite green (covering `tcformat/` and `toolkit/`).
+- A screen runs end to end through Stage 1 → 2 → 3 and produces `reports/test_report.xlsx` with the exit-criteria gate enforced.
+- `README.md` documents how to configure a new project and run each stage.
 
 ## Conventions
 

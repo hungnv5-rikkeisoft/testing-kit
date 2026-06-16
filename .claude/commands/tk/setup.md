@@ -1,5 +1,5 @@
 ---
-description: Bootstrap the Testing-Kit environment (venv, dependencies, Playwright browsers, config files)
+description: Bootstrap the Testing-Kit environment (venv, dependencies, Playwright MCP check, config files)
 argument-hint: "[--force]   # --force recreates the venv from scratch"
 allowed-tools: Bash, Read, Edit
 ---
@@ -19,13 +19,9 @@ unless `--force` was passed, in which case recreate `.venv` first.
 
        .venv\Scripts\python -m pip install -r requirements.txt
 
-3. **Playwright browsers** (chromium for desktop, webkit for the iPad subset):
-
-       .venv\Scripts\python -m playwright install chromium webkit
-
-4. **Playwright MCP server** — Stage 2 (`/tk:run`) drives the live browser
-   through the Playwright MCP server, not the Python package above. Verify it
-   is connected:
+3. **Playwright MCP server** — Stage 2 (`/tk:run`) drives the live browser
+   through the Playwright MCP server (there is no Python Playwright dependency).
+   Verify it is connected:
 
        claude mcp list
 
@@ -34,13 +30,13 @@ unless `--force` was passed, in which case recreate `.venv` first.
    this repo) and that Stage 2 cannot run until it is — do **not** attempt to
    install or reconfigure it from here.
 
-5. **Config files** — copy the examples only if the real files are missing
+4. **Config files** — copy the examples only if the real files are missing
    (never overwrite an existing `config\config.yaml` / `config\users.yaml`):
 
        copy config\config.example.yaml config\config.yaml
        copy config\users.example.yaml  config\users.yaml
 
-6. After copying, open `config\config.yaml` and tell the user to set `base_url`
+5. After copying, open `config\config.yaml` and tell the user to set `base_url`
    (and any thresholds that differ from the strategy). Report which files were
    created vs. already present.
 

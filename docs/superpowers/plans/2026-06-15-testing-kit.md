@@ -1,5 +1,10 @@
 # Testing-Kit Implementation Plan
 
+> ⚠️ **LỖI THỜI (point-in-time).** Plan này dựng lớp `pytest` theo layer (`toolkit/`
+> browser/checks/api_client, `conftest.py`, `scripts/run.py`, `tests/{api,integration,system}`)
+> — lớp đó **đã bị gỡ khỏi codebase**. Kiến trúc hiện hành là pipeline 3-stage skill-driven
+> (Stage 2 chạy qua Playwright MCP). Giữ lại làm hồ sơ; xem `CLAUDE.md`/`HANDOFF.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a reusable, config-driven Python + Playwright toolkit that automates the project's testing strategy (API, Integration/UI, System) and produces QA reports with an exit-criteria gate, plus auto-generated test checklists.
