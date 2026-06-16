@@ -21,7 +21,7 @@ Steps:
    - optional `--out path` (defaults to `reports\test_report.xlsx`).
 2. Run, on Windows (one `--yaml` per screen):
 
-       .venv\Scripts\python scripts\gen_report.py --yaml testcases\<screen>.yaml --out reports\test_report.xlsx
+       .venv\Scripts\tk-report --yaml testcases\<screen>.yaml --out reports\test_report.xlsx
 
 3. The command **exits non-zero if the exit-criteria gate fails** (pass rate < 95%
    or any Critical/High bug). Surface that result clearly — do not call a failed gate

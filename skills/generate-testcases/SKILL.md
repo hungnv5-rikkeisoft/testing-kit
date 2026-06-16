@@ -13,8 +13,8 @@ then render the team-format xlsx and verify 100% strategy coverage.
 1. Design docs for the screen: text/markdown spec, business rules, DB/API design.
 2. Figma or screenshot images (read them multimodally if provided).
 3. Strategy testing objects for the relevant level(s):
-   run `./.venv/Scripts/python.exe -c "from tcformat.strategy import list_objects; import json; print(json.dumps(list_objects('strategy/strategy.xlsx','2_IntergrationTesting'), ensure_ascii=False))"`
-   (swap the sheet for 1_APITesting / 3_System_Testing as needed).
+   run `./.venv/Scripts/tk-strategy --sheet 2_IntergrationTesting`
+   (swap the sheet for 1_APITesting / 3_System_Testing as needed). Output is JSON.
 
 ## Process
 
@@ -32,9 +32,10 @@ then render the team-format xlsx and verify 100% strategy coverage.
    from tcformat.render_xlsx import render
    from tcformat.coverage import check_coverage
    from tcformat.strategy import list_objects
+   from tcformat.resources import default_template, default_strategy
    sc = load_screen('testcases/<screen-slug>.yaml')
-   render([sc], 'template/Format test case + Test report.xlsx', 'testcases/<screen-slug>.xlsx')
-   refs = {o['ref'] for o in list_objects('strategy/strategy.xlsx','2_IntergrationTesting') if o['ref']}
+   render([sc], default_template(), 'testcases/<screen-slug>.xlsx')
+   refs = {o['ref'] for o in list_objects(default_strategy(),'2_IntergrationTesting') if o['ref']}
    rep = check_coverage(sc, refs)
    print('missing:', sorted(rep.missing)); print('unknown:', sorted(rep.unknown))
    "

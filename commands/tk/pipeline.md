@@ -33,7 +33,7 @@ Report the OK/NG/N·A tally.
 ### Stage 3 — Generate report
 Run:
 
-    .venv\Scripts\python scripts\gen_report.py --yaml testcases\<screen>.yaml --out reports\test_report.xlsx
+    .venv\Scripts\tk-report --yaml testcases\<screen>.yaml --out reports\test_report.xlsx
 
 Add `--project-name "..."` if given. This exits non-zero if the exit-criteria gate
 fails (pass rate < 95% or any Critical/High bug).

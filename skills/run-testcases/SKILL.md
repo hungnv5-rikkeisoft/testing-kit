@@ -62,7 +62,7 @@ then record the remaining testcases as not-run (skip) and report why.
 - `evidence/<slug>/chrome/<ID>/step_N.png` trees (gitignored — they are run evidence).
 - Optionally re-render the xlsx to surface the result columns:
   ```
-  ./.venv/Scripts/python.exe -c "from tcformat.schema import load_screen; from tcformat.render_xlsx import render; sc=load_screen('testcases/<slug>.yaml'); render([sc],'template/Format test case + Test report.xlsx','testcases/<slug>.xlsx'); print('rendered')"
+  ./.venv/Scripts/python.exe -c "from tcformat.schema import load_screen; from tcformat.render_xlsx import render; from tcformat.resources import default_template; sc=load_screen('testcases/<slug>.yaml'); render([sc],default_template(),'testcases/<slug>.xlsx'); print('rendered')"
   ```
 
 ## Notes
