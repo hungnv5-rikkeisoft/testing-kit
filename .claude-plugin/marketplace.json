@@ -1,0 +1,11 @@
+{
+  "name": "testing-kit",
+  "owner": { "name": "Hungnv5" },
+  "plugins": [
+    {
+      "name": "testing-kit",
+      "source": "./",
+      "description": "Config-driven web test-automation pipeline (generate -> run -> report)."
+    }
+  ]
+}
