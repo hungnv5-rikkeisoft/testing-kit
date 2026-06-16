@@ -1,8 +1,8 @@
 # Testing-Kit
 
 Reusable Python + Playwright toolkit automating the project test strategy
-(API, Integration/UI, System) with auto-generated checklists, HTML/JUnit
-reports, and an exit-criteria gate (strategy sheet 6).
+(API, Integration/UI, System) with HTML/JUnit reports and an exit-criteria
+gate (strategy sheet 6).
 
 ## Slash commands (Claude Code)
 
@@ -13,7 +13,6 @@ and wrap the exact commands documented below.
 | Command | Does | Wraps |
 |---------|------|-------|
 | `/tk:setup [--force]` | venv + deps + Playwright browsers + config copy | [Setup](#setup) |
-| `/tk:checklists [sheet]` | Generate checklists (all three layers, or one sheet) | [Generate checklists](#generate-checklists) |
 | `/tk:testcases <screen> [docs]` | **Stage 1** — draft test cases from design docs | `generate-testcases` skill |
 | `/tk:run <screen> [chrome\|safari]` | **Stage 2** — execute test cases, capture evidence | `run-testcases` skill |
 | `/tk:report <screen…> [--project-name] [--out]` | **Stage 3** — build the team report xlsx | `gen_report.py` |
@@ -44,14 +43,6 @@ The raw CLI below remains the source of truth and works outside Claude Code.
 Reports land in `reports/` (`*.html`, `*-junit.xml`, `*-summary.json`).
 The run prints `[exit-criteria] FAILED` if pass rate < 95% or any
 Critical/High bug is recorded.
-
-## Generate checklists
-
-    .venv\Scripts\python scripts\gen_checklist.py --sheet 1_APITesting --title "API Testing"
-    .venv\Scripts\python scripts\gen_checklist.py --sheet 2_IntergrationTesting --title "Integration/UI Testing"
-    .venv\Scripts\python scripts\gen_checklist.py --sheet 3_System_Testing --title "System Testing"
-
-Output: `checklists/<sheet>.md`.
 
 ## Generate project test cases (Stage 1)
 

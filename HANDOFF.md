@@ -71,7 +71,7 @@ Tài liệu thiết kế + strategy.xlsx
   ./.venv/Scripts/python.exe -m pip install -r requirements.txt
   ./.venv/Scripts/python.exe -m playwright install chromium webkit
   ```
-- Scripts (`scripts/gen_checklist.py`) tự thêm repo-root vào `sys.path` để import `tcformat` khi chạy trực tiếp.
+- Scripts trong `scripts/` tự thêm repo-root vào `sys.path` để import `tcformat` khi chạy trực tiếp.
 - IDE có thể báo "Cannot find module pytest/playwright" — đó là false positive (VS Code trỏ Python 3.14), bỏ qua.
 - httpserver test ép IPv4 (`tests/api/conftest.py`) để tránh độ trễ ~2s IPv6 loopback của Windows.
 
@@ -87,10 +87,10 @@ Tài liệu thiết kế + strategy.xlsx
 | `tcformat/render_xlsx.py` | `render(screens, template, out)` → xlsx sheet "4.x" |
 | `.claude/skills/generate-testcases/SKILL.md` | Quy trình AI sinh test case (Stage 1) |
 | `toolkit/` | Helpers tái dùng cho Stage 2 (browser/checks) + báo cáo |
-| `scripts/run.py`, `gen_report.py`, `gen_checklist.py` | CLI chạy test / báo cáo / checklist |
+| `scripts/run.py`, `gen_report.py` | CLI chạy test / báo cáo |
 | `docs/superpowers/specs/`, `docs/superpowers/plans/` | Spec & plan từng stage |
 
-**Thư mục sinh tự động (gitignore):** `reports/`, `testcases/`, `checklists/`, `.venv/`.
+**Thư mục sinh tự động (gitignore):** `reports/`, `testcases/`, `.venv/`.
 
 ## 5. Lệnh hay dùng
 
@@ -101,9 +101,6 @@ Tài liệu thiết kế + strategy.xlsx
 # Chạy theo layer + xuất báo cáo
 ./.venv/Scripts/python.exe scripts/run.py --layer integration
 ./.venv/Scripts/python.exe scripts/run.py --layer integration --tablet
-
-# Sinh checklist từ chiến lược
-./.venv/Scripts/python.exe scripts/gen_checklist.py --sheet 2_IntergrationTesting --title "Integration/UI Testing"
 
 # JUnit -> sheet "3. Test Report"
 ./.venv/Scripts/python.exe scripts/gen_report.py --chrome reports/integration-junit.xml --out reports/test_report.xlsx

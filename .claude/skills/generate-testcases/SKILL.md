@@ -18,7 +18,7 @@ then render the team-format xlsx and verify 100% strategy coverage.
 ## Process
 1. For EACH strategy testing object relevant to the screen, write at least one
    testcase whose `strategy_ref` equals that object's `ref` (e.g. "2.3.1#1").
-   Add screen-specific cases beyond the checklist where the design warrants.
+   Add screen-specific cases beyond the strategy objects where the design warrants.
 2. Each testcase follows the schema in `tcformat/schema.py`: id, section
    (UI/FUNCTION/...), main_item, type (UT|IT|ST), priority (Low|Medium|High),
    strategy_ref, precondition, steps (NL, ordered), expected (NL, ordered).
