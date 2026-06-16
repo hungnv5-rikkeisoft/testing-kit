@@ -70,6 +70,9 @@ def main(argv=None):
     ap.add_argument("--config", default=None,
                     help="config.yaml to read strategy_path override from")
     args = ap.parse_args(argv)
+    import sys
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     path = strategy_path(args.xlsx, args.config)
     print(json.dumps(list_objects(path, args.sheet), ensure_ascii=False))
 
