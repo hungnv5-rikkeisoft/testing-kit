@@ -5,6 +5,30 @@ Reusable Python + Playwright toolkit automating the project test strategy as a
 test-case format, producing the team xlsx report with an exit-criteria gate
 (strategy sheet 6).
 
+## Install (as a Claude Code plugin)
+
+1. Add the marketplace (point at this repo's git URL):
+
+       /plugin marketplace add <git-url-of-this-repo>
+
+2. Install the plugin:
+
+       /plugin install testing-kit
+
+3. In your project directory, bootstrap the environment:
+
+       /tk:setup
+
+   This creates `.venv`, installs the bundled framework, verifies the Playwright
+   MCP server, and seeds `config/`. Then edit `config/config.yaml` (`base_url`,
+   thresholds, optional `template_path`/`strategy_path` overrides).
+
+## Run a screen
+
+       /tk:testcases <screen> <design-docs-path>     # Stage 1
+       /tk:run <screen> [chrome|safari]              # Stage 2
+       /tk:report <screen>                           # Stage 3  (or /tk:pipeline for all three)
+
 ## Slash commands (Claude Code)
 
 Inside Claude Code you can drive the whole pipeline with `/tk:*` commands instead
@@ -16,7 +40,7 @@ and wrap the exact commands documented below.
 | `/tk:setup [--force]` | venv + deps + Playwright browsers + config copy | [Setup](#setup) |
 | `/tk:testcases <screen> [docs]` | **Stage 1** — draft test cases from design docs | `generate-testcases` skill |
 | `/tk:run <screen> [chrome\|safari]` | **Stage 2** — execute test cases, capture evidence | `run-testcases` skill |
-| `/tk:report <screen…> [--project-name] [--out]` | **Stage 3** — build the team report xlsx | `gen_report.py` |
+| `/tk:report <screen…> [--project-name] [--out]` | **Stage 3** — build the team report xlsx | `tk-report` |
 | `/tk:pipeline <screen> [docs] [browser]` | Full Stage 1 → 2 → 3 end to end (pauses for review after Stage 1) | the whole chain |
 
 Screen arguments accept a bare name (resolved to `testcases/<screen>.yaml`) or an
@@ -39,8 +63,8 @@ package); see `/tk:setup` to verify it is connected.
 
 Drive the three stages with the `/tk:*` commands (table above) or directly:
 Stage 1 via the `generate-testcases` skill, Stage 2 via the `run-testcases`
-skill, Stage 3 via `scripts/gen_report.py --yaml` (see below). The framework's
-own unit suite runs with `.venv\Scripts\python -m pytest -q`.
+skill, Stage 3 via the `tk-report --yaml` console script (see below). The
+framework's own unit suite runs with `.venv\Scripts\python -m pytest -q`.
 
 ## Generate project test cases (Stage 1)
 
@@ -49,7 +73,9 @@ coverage. Driven by the `generate-testcases` skill (AI reads the design docs);
 the deterministic backbone lives in `tcformat/`:
 
 - `tcformat/schema.py`  — YAML test-case contract (`testcases/<screen>.yaml`)
-- `tcformat/strategy.py`— testing-object refs from `strategy.xlsx`
+- `tcformat/strategy.py`— testing-object refs from the strategy xlsx (bundled
+  under `tcformat/data/`, resolved via `tcformat.resources`; exposed as the
+  `tk-strategy` CLI)
 - `tcformat/coverage.py`— checks every strategy object has a testcase
 - `tcformat/render_xlsx.py` — renders YAML → testcase sheet "4.x" (standalone
   `testcases/<screen>.xlsx`, and reused by the Stage 3 report via `render_into`)
@@ -73,9 +99,11 @@ Playwright MCP, taking a screenshot per step):
 ## Generate the team Test Report (xlsx)
 
 Reads the `result` fields Stage 2 wrote and produces ONE workbook from the
-company template, all in sync from the same YAML:
+team template, all in sync from the same YAML. The template ships bundled under
+`tcformat/data/` (resolved via `tcformat.resources`); override it in
+`config/config.yaml` with `template_path` if needed:
 
-    .venv\Scripts\python scripts\gen_report.py ^
+    .venv\Scripts\tk-report ^
         --yaml testcases\basic-information-input.yaml ^
         --out reports\test_report.xlsx
 

@@ -20,8 +20,8 @@ Core principle: the framework is **not tied to any one app**. Switching projects
 The framework is **implemented as a 3-stage, skill-driven pipeline** around a shared YAML test-case format. See `HANDOFF.md` for the full status and the per-stage specs/plans under `docs/superpowers/`.
 
 - `docs/superpowers/specs/2026-06-15-testing-kit-design.md` — the original design spec (in Vietnamese). Note: the pytest-per-layer execution model in older specs has been **removed** in favour of the skill-driven pipeline below.
-- `strategy/strategy.xlsx` — the test strategy that drives thresholds and the device matrix.
-- `template/Format test case + Test report.xlsx` — the required test-case / test-report output format.
+- The test strategy xlsx — drives thresholds and the device matrix. Ships bundled under `tcformat/data/` and is resolved via `tcformat.resources` (config-overridable via `strategy_path`).
+- The team template xlsx ("Format test case + Test report") — the required test-case / test-report output format. Ships bundled under `tcformat/data/` and is resolved via `tcformat.resources` (config-overridable via `template_path`).
 
 ## Architecture
 
@@ -33,13 +33,13 @@ design docs + strategy.xlsx
   ▼  testcases/<screen>.yaml  ◄──►  testcases/<screen>.xlsx (template sheet 4.x)
   │ Stage 2 — run test cases (run-testcases skill: agent + Playwright MCP, screenshot/step)
   ▼  result + evidence/<screen>/<browser>/<TestcaseID>/step_N.png written back into the YAML
-  │ Stage 3 — report + embed evidence (scripts/gen_report.py --yaml)
+  │ Stage 3 — report + embed evidence (tk-report --yaml)
   ▼  reports/test_report.xlsx (sheet "3. Test Report" + "Evidence", exit-criteria gate)
 ```
 
 - `tcformat/` is the deterministic backbone: `schema.py` (YAML contract), `strategy.py` (strategy refs), `coverage.py`, `render_xlsx.py`, `runlog.py` (Stage 2 result/evidence bookkeeping), `report_data.py`/`report_sheet.py`/`report_xlsx.py` (Stage 3 aggregation + workbook).
 - `toolkit/` is the small shared core: `config.py` (load/validate YAML + thresholds) and `report.py` (`Summary` + exit-criteria evaluation), reused by `tcformat/report_data.py`.
-- `scripts/` holds `gen_report.py` (Stage 3 CLI) and `with_server.py` (server lifecycle helper, reused from the `webapp-testing` plugin).
+- Stage 3 logic lives in `tcformat/report_cli.py`, exposed as the `tk-report` console script (`scripts/gen_report.py` remains a thin backward-compat shim). `scripts/` also holds `with_server.py` (server lifecycle helper, reused from the `webapp-testing` plugin).
 - `demo/app.py` is a Flask app standing in for the app-under-test in Stage 2.
 - `tests/unit/` holds the framework's own pytest unit tests (covering `tcformat/` and `toolkit/`); they need no running app.
 
@@ -48,7 +48,7 @@ design docs + strategy.xlsx
 These are encoded as config defaults, not hard-coded values — but they are the source of truth:
 
 - API response `< 600ms`; web response `< 1.5s`; page load `< 2.5s`.
-- **Exit criteria:** `>= 95%` pass rate **and** `0` Critical/High bugs. The Stage 3 report (`gen_report.py --yaml`) exits non-zero if either fails (gate in `tcformat/report_data.py` via `toolkit.report`/`toolkit.config`).
+- **Exit criteria:** `>= 95%` pass rate **and** `0` Critical/High bugs. The Stage 3 report (`tk-report --yaml`) exits non-zero if either fails (gate in `tcformat/report_data.py` via `toolkit.report`/`toolkit.config`).
 - **Device matrix (sheet 4):** Desktop FULL HD 1920px / Windows / Chrome (chromium) for full GUI+function; iPad gen5 / Safari (webkit) / 1536×2048 for a ~25% selective subset. Per-screen results are recorded in the YAML under `result.chrome` / `result.safari`.
 - **API code rules (sheet 1.3.3):** 200 → validate required/optional response body; 400/401/403 → check code + completeness only; business errors 1–99 ride on HTTP 200 with a code header.
 
