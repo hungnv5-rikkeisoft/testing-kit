@@ -56,3 +56,23 @@ def all_refs(xlsx_path) -> set[str]:
             if o["ref"]:
                 refs.add(o["ref"])
     return refs
+
+
+def main(argv=None):
+    import argparse
+    import json
+    from tcformat.resources import strategy_path
+    ap = argparse.ArgumentParser(
+        description="List strategy testing objects (refs) for a sheet as JSON.")
+    ap.add_argument("--sheet", required=True,
+                    help="e.g. 1_APITesting | 2_IntergrationTesting | 3_System_Testing")
+    ap.add_argument("--xlsx", default=None, help="override strategy xlsx path")
+    ap.add_argument("--config", default=None,
+                    help="config.yaml to read strategy_path override from")
+    args = ap.parse_args(argv)
+    path = strategy_path(args.xlsx, args.config)
+    print(json.dumps(list_objects(path, args.sheet), ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
