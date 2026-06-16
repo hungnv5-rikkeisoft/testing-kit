@@ -3,7 +3,7 @@ from openpyxl import load_workbook
 from PIL import Image as PILImage
 
 from tcformat.schema import Screen, Testcase, Result, BrowserResult, dump_screen
-from scripts.gen_report import build_report_from_yaml
+from tcformat.report_cli import build_report_from_yaml
 
 from tcformat.resources import default_template
 TEMPLATE = default_template()
