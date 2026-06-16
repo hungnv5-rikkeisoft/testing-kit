@@ -6,7 +6,8 @@ from tcformat.schema import Screen, Testcase, Result, BrowserResult
 from tcformat.report_data import aggregate
 from tcformat.report_xlsx import write_report, REPORT_SHEET, EVIDENCE_SHEET
 
-TEMPLATE = "template/Format test case + Test report.xlsx"
+from tcformat.resources import default_template
+TEMPLATE = default_template()
 
 
 def _png(path):

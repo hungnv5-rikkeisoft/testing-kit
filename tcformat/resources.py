@@ -9,6 +9,8 @@ from __future__ import annotations
 from importlib.resources import files
 from pathlib import Path
 
+import yaml
+
 TEMPLATE_NAME = "Format test case + Test report.xlsx"
 STRATEGY_NAME = "strategy.xlsx"
 
@@ -21,20 +23,19 @@ def default_strategy() -> str:
     return str(files("tcformat").joinpath("data", "strategy", STRATEGY_NAME))
 
 
-def _from_config(config_path, key):
+def _from_config(config_path: str | None, key: str):
     if not config_path:
         return None
     p = Path(config_path)
     if not p.exists():
         return None
-    import yaml
     data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     return data.get(key)
 
 
-def template_path(explicit=None, config_path=None) -> str:
+def template_path(explicit: str | None = None, config_path: str | None = None) -> str:
     return explicit or _from_config(config_path, "template_path") or default_template()
 
 
-def strategy_path(explicit=None, config_path=None) -> str:
+def strategy_path(explicit: str | None = None, config_path: str | None = None) -> str:
     return explicit or _from_config(config_path, "strategy_path") or default_strategy()

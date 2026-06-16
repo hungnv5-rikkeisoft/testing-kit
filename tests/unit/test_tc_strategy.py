@@ -27,5 +27,6 @@ def test_list_objects_builds_refs(tmp_path):
 
 
 def test_all_refs_on_real_strategy():
-    refs = all_refs("strategy/strategy.xlsx")
+    from tcformat.resources import default_strategy
+    refs = all_refs(default_strategy())
     assert refs and "2.3.1#1" in refs

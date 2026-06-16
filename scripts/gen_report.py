@@ -16,7 +16,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-DEFAULT_TEMPLATE = "template/Format test case + Test report.xlsx"
+from tcformat.resources import default_template
+
+DEFAULT_TEMPLATE = default_template()
 
 
 def build_report_from_yaml(yaml_paths, template_path, out_path, base_dir=".",

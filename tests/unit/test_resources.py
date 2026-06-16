@@ -21,3 +21,7 @@ def test_config_override(tmp_path):
     assert template_path(None, str(cfg)) == "/from/cfg.xlsx"
     assert template_path("/explicit.xlsx", str(cfg)) == "/explicit.xlsx"
     assert strategy_path(None, str(cfg)) == default_strategy()
+
+
+def test_config_path_missing_file_falls_back():
+    assert template_path(None, "does/not/exist.yaml") == default_template()

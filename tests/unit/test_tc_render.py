@@ -2,7 +2,8 @@ from openpyxl import load_workbook
 from tcformat.schema import Screen, Testcase
 from tcformat.render_xlsx import render
 
-TEMPLATE = "template/Format test case + Test report.xlsx"
+from tcformat.resources import default_template
+TEMPLATE = default_template()
 
 
 def _sheet_by_c1(wb, name):

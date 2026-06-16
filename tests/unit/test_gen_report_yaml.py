@@ -5,7 +5,8 @@ from PIL import Image as PILImage
 from tcformat.schema import Screen, Testcase, Result, BrowserResult, dump_screen
 from scripts.gen_report import build_report_from_yaml
 
-TEMPLATE = "template/Format test case + Test report.xlsx"
+from tcformat.resources import default_template
+TEMPLATE = default_template()
 
 
 def _png(path):

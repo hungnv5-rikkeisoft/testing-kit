@@ -2,7 +2,8 @@ from openpyxl import load_workbook
 from tcformat.report_sheet import (
     REPORT_SHEET, find_header_row, clear_region, write_screen_row)
 
-TEMPLATE = "template/Format test case + Test report.xlsx"
+from tcformat.resources import default_template
+TEMPLATE = default_template()
 
 
 def test_find_header_row_locates_function_screen():
