@@ -23,13 +23,24 @@ unless `--force` was passed, in which case recreate `.venv` first.
 
        .venv\Scripts\python -m playwright install chromium webkit
 
-4. **Config files** — copy the examples only if the real files are missing
+4. **Playwright MCP server** — Stage 2 (`/tk:run`) drives the live browser
+   through the Playwright MCP server, not the Python package above. Verify it
+   is connected:
+
+       claude mcp list
+
+   Look for a `playwright` entry reporting `✔ Connected`. If it is missing or
+   not connected, tell the user to install it (it is plugin/user-scoped, not in
+   this repo) and that Stage 2 cannot run until it is — do **not** attempt to
+   install or reconfigure it from here.
+
+5. **Config files** — copy the examples only if the real files are missing
    (never overwrite an existing `config\config.yaml` / `config\users.yaml`):
 
        copy config\config.example.yaml config\config.yaml
        copy config\users.example.yaml  config\users.yaml
 
-5. After copying, open `config\config.yaml` and tell the user to set `base_url`
+6. After copying, open `config\config.yaml` and tell the user to set `base_url`
    (and any thresholds that differ from the strategy). Report which files were
    created vs. already present.
 
