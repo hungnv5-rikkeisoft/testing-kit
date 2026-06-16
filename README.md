@@ -32,8 +32,8 @@ test-case format, producing the team xlsx report with an exit-criteria gate
 ## Slash commands (Claude Code)
 
 Inside Claude Code you can drive the whole pipeline with `/tk:*` commands instead
-of typing the CLI by hand. They live in `.claude/commands/tk/` (committed, shared)
-and wrap the exact commands documented below.
+of typing the CLI by hand. They ship with the plugin under `commands/tk/` (and the
+skills under `skills/`) and wrap the exact commands documented below.
 
 | Command | Does | Wraps |
 |---------|------|-------|
