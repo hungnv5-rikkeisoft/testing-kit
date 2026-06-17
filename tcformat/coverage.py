@@ -23,3 +23,36 @@ def check_coverage(screen, strategy_refs: set) -> CoverageReport:
     missing = strategy_refs - tagged
     return CoverageReport(covered=covered, missing=missing,
                           unknown=unknown, total=len(strategy_refs))
+
+
+@dataclass
+class DepthReport:
+    expected: int
+    covered: int
+    gaps: list  # list[tuple[element_id, technique]]
+
+    @property
+    def depth_rate(self) -> float:
+        return self.covered / self.expected if self.expected else 0.0
+
+
+def check_depth(inventory, checklists, screen) -> DepthReport:
+    """Expected matrix = each element's kind techniques + screen techniques (once).
+
+    A cell (element_id, technique) is covered when a testcase has matching
+    target and technique. Elements of kind 'screen' are skipped here because
+    screen-level techniques are added once under the synthetic target 'screen'.
+    """
+    have = {(tc.target, tc.technique)
+            for tc in screen.testcases if tc.target and tc.technique}
+    expected_cells: list = []
+    for el in inventory.elements:
+        if el.kind == "screen":
+            continue
+        for entry in checklists.get(el.kind, []):
+            expected_cells.append((el.id, entry["technique"]))
+    for entry in checklists.get("screen", []):
+        expected_cells.append(("screen", entry["technique"]))
+    gaps = [cell for cell in expected_cells if cell not in have]
+    return DepthReport(expected=len(expected_cells),
+                       covered=len(expected_cells) - len(gaps), gaps=gaps)
