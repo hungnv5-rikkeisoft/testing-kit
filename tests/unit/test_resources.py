@@ -25,3 +25,12 @@ def test_config_override(tmp_path):
 
 def test_config_path_missing_file_falls_back():
     assert template_path(None, "does/not/exist.yaml") == default_template()
+
+
+def test_checklists_default_and_override(tmp_path):
+    from tcformat.resources import default_checklists, checklists_path
+    assert checklists_path() == default_checklists()
+    assert checklists_path("/x/c.yaml") == "/x/c.yaml"
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text("checklists_path: /from/cfg.yaml\n", encoding="utf-8")
+    assert checklists_path(None, str(cfg)) == "/from/cfg.yaml"

@@ -1,0 +1,43 @@
+input:
+  - {technique: empty,             category: Validation,    title: "Bỏ trống field bắt buộc"}
+  - {technique: null-value,        category: Validation,    title: "Giá trị null"}
+  - {technique: only-space,        category: Validation,    title: "Chỉ chứa khoảng trắng"}
+  - {technique: min-length,        category: Boundary,      title: "Độ dài tối thiểu"}
+  - {technique: max-length,        category: Boundary,      title: "Độ dài tối đa"}
+  - {technique: over-max,          category: Boundary,      title: "Vượt độ dài tối đa"}
+  - {technique: boundary,          category: Boundary,      title: "Giá trị biên (n-1/n/n+1)"}
+  - {technique: special-char,      category: Validation,    title: "Ký tự đặc biệt"}
+  - {technique: jp-chars,          category: Validation,    title: "Ký tự tiếng Nhật"}
+  - {technique: vn-chars,          category: Validation,    title: "Ký tự tiếng Việt có dấu"}
+  - {technique: wrong-format,      category: Validation,    title: "Sai định dạng"}
+  - {technique: nonexistent-value, category: Validation,    title: "Giá trị không tồn tại trong hệ thống"}
+select:
+  - {technique: option-source,     category: Function,      title: "Nguồn dữ liệu option (DB/hard-code)"}
+  - {technique: option-list,       category: Function,      title: "Đủ danh sách option expected"}
+  - {technique: option-order,      category: Function,      title: "Thứ tự hiển thị option"}
+  - {technique: default-value,     category: Function,      title: "Giá trị mặc định khi load"}
+button:
+  - {technique: single-action,     category: Function,      title: "Thao tác chính của button (1 case/button)"}
+  - {technique: state-after-click, category: Function,      title: "Trạng thái field/button sau khi click"}
+  - {technique: double-click,      category: UserBehavior,  title: "Double click"}
+  - {technique: multi-click-pending, category: UserBehavior, title: "Multi-click khi request đang xử lý"}
+api:
+  - {technique: http-200,          category: API,           title: "HTTP 200 + body hợp lệ"}
+  - {technique: http-400,          category: API,           title: "HTTP 400"}
+  - {technique: http-401,          category: API,           title: "HTTP 401"}
+  - {technique: http-403,          category: API,           title: "HTTP 403"}
+  - {technique: http-404,          category: API,           title: "HTTP 404"}
+  - {technique: http-500,          category: API,           title: "HTTP 500"}
+  - {technique: missing-param,     category: API,           title: "Thiếu parameter"}
+  - {technique: invalid-data,      category: API,           title: "Dữ liệu không hợp lệ"}
+  - {technique: empty-response,    category: API,           title: "Response rỗng"}
+screen:
+  - {technique: url-tamper,             category: Security,      title: "Thay đổi URL trên browser"}
+  - {technique: query-tamper,           category: Security,      title: "Thay đổi query parameter"}
+  - {technique: direct-access-no-login, category: Security,      title: "Truy cập URL khi chưa login"}
+  - {technique: lower-priv-user,        category: Security,      title: "Truy cập bằng user không đủ quyền"}
+  - {technique: session-expired,        category: ErrorHandling, title: "Session hết hạn"}
+  - {technique: network-down,           category: ErrorHandling, title: "Mất kết nối mạng"}
+  - {technique: server-timeout,         category: ErrorHandling, title: "Server timeout"}
+  - {technique: back-forward,           category: UserBehavior,  title: "Back/Forward browser"}
+  - {technique: refresh-during-submit,  category: UserBehavior,  title: "Refresh khi đang submit"}

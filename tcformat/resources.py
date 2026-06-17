@@ -13,6 +13,7 @@ import yaml
 
 TEMPLATE_NAME = "Format test case + Test report.xlsx"
 STRATEGY_NAME = "strategy.xlsx"
+CHECKLISTS_NAME = "checklists.yaml"
 
 
 def default_template() -> str:
@@ -21,6 +22,10 @@ def default_template() -> str:
 
 def default_strategy() -> str:
     return str(files("tcformat").joinpath("data", "strategy", STRATEGY_NAME))
+
+
+def default_checklists() -> str:
+    return str(files("tcformat").joinpath("data", CHECKLISTS_NAME))
 
 
 def _from_config(config_path: str | None, key: str):
@@ -39,3 +44,7 @@ def template_path(explicit: str | None = None, config_path: str | None = None) -
 
 def strategy_path(explicit: str | None = None, config_path: str | None = None) -> str:
     return explicit or _from_config(config_path, "strategy_path") or default_strategy()
+
+
+def checklists_path(explicit: str | None = None, config_path: str | None = None) -> str:
+    return explicit or _from_config(config_path, "checklists_path") or default_checklists()

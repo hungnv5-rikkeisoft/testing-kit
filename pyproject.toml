@@ -21,4 +21,4 @@ packages = ["tcformat", "toolkit"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-tcformat = ["data/template/*.xlsx", "data/strategy/*.xlsx"]
+tcformat = ["data/template/*.xlsx", "data/strategy/*.xlsx", "data/*.yaml"]
