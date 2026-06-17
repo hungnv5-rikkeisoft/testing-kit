@@ -7,21 +7,21 @@ test-case format, producing the team xlsx report with an exit-criteria gate
 
 ## Install (as a Claude Code plugin)
 
-1. Add the marketplace (point at this repo's git URL):
+1.  Add the marketplace (point at this repo's git URL):
 
-       /plugin marketplace add <git-url-of-this-repo>
+    /plugin marketplace add https://github.com/hungnv5-rikkeisoft/testing-kit.git
 
-2. Install the plugin:
+2.  Install the plugin:
 
-       /plugin install testing-kit
+    /plugin install testing-kit
 
-3. In your project directory, bootstrap the environment:
+3.  In your project directory, bootstrap the environment:
 
-       /tk:setup
+        /tk:setup
 
-   This creates `.venv`, installs the bundled framework, verifies the Playwright
-   MCP server, and seeds `config/`. Then edit `config/config.yaml` (`base_url`,
-   thresholds, optional `template_path`/`strategy_path` overrides).
+    This creates `.venv`, installs the bundled framework, verifies the Playwright
+    MCP server, and seeds `config/`. Then edit `config/config.yaml` (`base_url`,
+    thresholds, optional `template_path`/`strategy_path` overrides).
 
 ## Run a screen
 
@@ -35,13 +35,13 @@ Inside Claude Code you can drive the whole pipeline with `/tk:*` commands instea
 of typing the CLI by hand. They ship with the plugin under `commands/tk/` (and the
 skills under `skills/`) and wrap the exact commands documented below.
 
-| Command | Does | Wraps |
-|---------|------|-------|
-| `/tk:setup [--force]` | venv + deps + Playwright browsers + config copy | [Setup](#setup) |
-| `/tk:testcases <screen> [docs]` | **Stage 1** — draft test cases from design docs | `generate-testcases` skill |
-| `/tk:run <screen> [chrome\|safari]` | **Stage 2** — execute test cases, capture evidence | `run-testcases` skill |
-| `/tk:report <screen…> [--project-name] [--out]` | **Stage 3** — build the team report xlsx | `tk-report` |
-| `/tk:pipeline <screen> [docs] [browser]` | Full Stage 1 → 2 → 3 end to end (pauses for review after Stage 1) | the whole chain |
+| Command                                         | Does                                                              | Wraps                      |
+| ----------------------------------------------- | ----------------------------------------------------------------- | -------------------------- |
+| `/tk:setup [--force]`                           | venv + deps + Playwright browsers + config copy                   | [Setup](#setup)            |
+| `/tk:testcases <screen> [docs]`                 | **Stage 1** — draft test cases from design docs                   | `generate-testcases` skill |
+| `/tk:run <screen> [chrome\|safari]`             | **Stage 2** — execute test cases, capture evidence                | `run-testcases` skill      |
+| `/tk:report <screen…> [--project-name] [--out]` | **Stage 3** — build the team report xlsx                          | `tk-report`                |
+| `/tk:pipeline <screen> [docs] [browser]`        | Full Stage 1 → 2 → 3 end to end (pauses for review after Stage 1) | the whole chain            |
 
 Screen arguments accept a bare name (resolved to `testcases/<screen>.yaml`) or an
 explicit path. The report/pipeline commands preserve the exit-criteria gate —
@@ -72,7 +72,7 @@ Draft test cases from design docs into the team xlsx format with strategy
 coverage. Driven by the `generate-testcases` skill (AI reads the design docs);
 the deterministic backbone lives in `tcformat/`:
 
-- `tcformat/schema.py`  — YAML test-case contract (`testcases/<screen>.yaml`)
+- `tcformat/schema.py` — YAML test-case contract (`testcases/<screen>.yaml`)
 - `tcformat/strategy.py`— testing-object refs from the strategy xlsx (bundled
   under `tcformat/data/`, resolved via `tcformat.resources`; exposed as the
   `tk-strategy` CLI)
@@ -130,10 +130,10 @@ in the YAML, written by Stage 2.
 
 ## Thresholds (from strategy)
 
-| Metric | Budget |
-|--------|--------|
-| API response | < 600 ms |
-| Web server response | < 1.5 s |
-| Full page load | < 2.5 s |
-| Exit: pass rate | >= 95% |
+| Metric              | Budget          |
+| ------------------- | --------------- |
+| API response        | < 600 ms        |
+| Web server response | < 1.5 s         |
+| Full page load      | < 2.5 s         |
+| Exit: pass rate     | >= 95%          |
 | Exit: blocking bugs | 0 Critical/High |
