@@ -41,8 +41,9 @@ Run on Windows (PowerShell). Skip satisfied steps unless `--force` was passed
    and seed config from the bundled examples (never overwrite existing config):
 
        mkdir config, testcases, evidence, reports -Force | Out-Null
-       if (!(Test-Path config\config.yaml)) { copy "$env:CLAUDE_PLUGIN_ROOT\config\config.example.yaml" config\config.yaml }
-       if (!(Test-Path config\users.yaml))  { copy "$env:CLAUDE_PLUGIN_ROOT\config\users.example.yaml"  config\users.yaml }
+       if (!(Test-Path config\config.yaml))  { copy "$env:CLAUDE_PLUGIN_ROOT\config\config.example.yaml"  config\config.yaml }
+       if (!(Test-Path config\users.yaml))   { copy "$env:CLAUDE_PLUGIN_ROOT\config\users.example.yaml"   config\users.yaml }
+       if (!(Test-Path config\devices.yaml)) { copy "$env:CLAUDE_PLUGIN_ROOT\config\devices.example.yaml" config\devices.yaml }
 
 5. After copying, open `config\config.yaml` and tell the user to set `base_url`
    (and any thresholds/`template_path`/`strategy_path` overrides). Report which
