@@ -7,6 +7,7 @@ Installed as the `tk-coverage` console script.
 """
 from __future__ import annotations
 import argparse
+import sys
 from pathlib import Path
 
 
@@ -39,6 +40,13 @@ def main(argv=None):
     ap.add_argument("--matrix-out", dest="matrix_out", default=None,
                     help="also write the markdown matrix to this file")
     args = ap.parse_args(argv)
+
+    # Console may use a non-UTF-8 code page (e.g. cp932 on Windows); gap markers
+    # and the matrix use Unicode (✓/✗/–). Force UTF-8 so printing never crashes.
+    for _stream in (sys.stdout, sys.stderr):
+        _reconfigure = getattr(_stream, "reconfigure", None)
+        if _reconfigure is not None:
+            _reconfigure(encoding="utf-8")
 
     inv_path = args.inventory or _default_inventory(args.screen)
     _, inventory, checklists, report = run_depth_check(

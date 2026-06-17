@@ -69,3 +69,15 @@ def test_matrix_out_written(tmp_path):
         main(argv)
     assert out.exists()
     assert "technique" in out.read_text(encoding="utf-8")
+
+
+def test_unicode_output_survives_non_utf8_stdout(tmp_path, monkeypatch):
+    import io
+    import sys
+    argv = _setup(tmp_path, testcases=[])   # uncovered -> prints ✗ marker + matrix
+    # Simulate a Windows cp932-style console that cannot encode ✓/✗/–
+    buf = io.TextIOWrapper(io.BytesIO(), encoding="ascii")
+    monkeypatch.setattr(sys, "stdout", buf)
+    with pytest.raises(SystemExit) as e:
+        main(argv)            # must NOT raise UnicodeEncodeError
+    assert e.value.code == 1
