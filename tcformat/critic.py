@@ -98,3 +98,46 @@ def run_critic(inventory, checklists, screen, depth_report) -> CriticReport:
         unknown_techniques=list(depth_report.unknown_techniques),
         kinds_without_checklist=list(depth_report.kinds_without_checklist),
     )
+
+
+def render_critic_md(report, screen_name) -> str:
+    """Render a CriticReport as a grouped markdown review checklist.
+
+    Markers: ✓ covered / ✗ gap / ⚠ outside the mechanical matrix (needs review).
+    Output-only — does not touch the team xlsx (columns A–R).
+    """
+    lines = [f"## Critic review — {screen_name}", "", "### Theo nhóm (category)"]
+    for cf in report.categories:
+        if not cf.in_matrix:
+            lines.append(
+                f"- **{cf.category}** — ⚠ NGOÀI MA TRẬN — cần AI/người review "
+                f"({cf.case_count} case hiện có)")
+        elif cf.gaps:
+            lines.append(f"- **{cf.category}** — {cf.case_count} case, {len(cf.gaps)} gap")
+            for eid, tech in cf.gaps:
+                lines.append(f"    ✗ {eid} / {tech}")
+        else:
+            lines.append(f"- **{cf.category}** — {cf.case_count} case, 0 gap ✓")
+
+    lines += ["", "### Phụ thuộc field (depends_on)"]
+    if report.depends:
+        for d in report.depends:
+            if d.linked:
+                lines.append(f"    ✓ {d.element_id} depends_on {d.depends_on} — đã có case")
+            else:
+                lines.append(
+                    f"    ✗ {d.element_id} depends_on {d.depends_on} "
+                    f"— KHÔNG có case liên kết   (fail gate)")
+    else:
+        lines.append("    (không có phần tử depends_on)")
+
+    if report.unknown_techniques or report.kinds_without_checklist:
+        lines += ["", "### Cảnh báo (không chặn gate)"]
+        if report.unknown_techniques:
+            ut = ", ".join(f"{e}/{t}" for e, t in report.unknown_techniques)
+            lines.append(f"- unknown techniques: {ut}")
+        if report.kinds_without_checklist:
+            kw = ", ".join(f"{e}({k})" for e, k in report.kinds_without_checklist)
+            lines.append(f"- kinds without checklist: {kw}")
+
+    return "\n".join(lines)

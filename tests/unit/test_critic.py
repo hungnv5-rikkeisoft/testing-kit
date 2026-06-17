@@ -1,6 +1,7 @@
 from tcformat.coverage import check_depth
 from tcformat.critic import (
     CATEGORY_ORDER, run_critic, CriticReport, CategoryFinding, DependsFinding,
+    render_critic_md,
 )
 from tcformat.inventory import Inventory, Element
 from tcformat.schema import Screen, Testcase, VALID_CATEGORIES
@@ -124,3 +125,31 @@ def test_warnings_forwarded():
     rep = run_critic(inv, CHECKLISTS, sc, _depth(inv, sc))
     assert ("lnk", "link") in rep.kinds_without_checklist
     assert ("lnk", "typo") in rep.unknown_techniques
+
+
+def test_render_marks_outside_matrix_and_gate():
+    inv = _inv([
+        Element(id="field_a", kind="input"),
+        Element(id="field_b", kind="input", depends_on=["field_a"]),
+    ])
+    sc = Screen(screen="S", testcases=[])
+    rep = run_critic(inv, CHECKLISTS, sc, _depth(inv, sc))
+    md = render_critic_md(rep, "S")
+    assert "## Critic review — S" in md
+    assert "**BusinessRule**" in md and "NGOÀI MA TRẬN" in md
+    assert "field_b depends_on field_a" in md
+    assert "(fail gate)" in md            # unlinked depends rendered as gate fail
+
+
+def test_render_clean_depends_no_gate_marker():
+    inv = _inv([
+        Element(id="field_a", kind="input", label="Tỉnh"),
+        Element(id="field_b", kind="input", depends_on=["field_a"]),
+    ])
+    sc = Screen(screen="S", testcases=[
+        Testcase(id="A", target="field_b", steps=["liên kết field_a"]),
+    ])
+    rep = run_critic(inv, CHECKLISTS, sc, _depth(inv, sc))
+    md = render_critic_md(rep, "S")
+    assert "field_b depends_on field_a — đã có case" in md
+    assert "(fail gate)" not in md
