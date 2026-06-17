@@ -14,6 +14,21 @@ the bundled package into it, verifies the Playwright MCP server, and seeds confi
 Run on Windows (PowerShell). Skip satisfied steps unless `--force` was passed
 (then recreate `.venv` first).
 
+0. **Source-repo guard (abort if wrong directory).** Before creating or copying
+   anything, confirm the CWD is a consumer project, not the plugin's own source
+   checkout. In PowerShell:
+
+       $inSource = (Test-Path .\.claude-plugin\plugin.json) -and `
+         ((Get-Content .\.claude-plugin\plugin.json -Raw | ConvertFrom-Json).name -eq 'testing-kit')
+       if ($inSource) {
+         Write-Host "ABORT: this is the Testing-Kit plugin source repo, not a project to test."
+         Write-Host "cd into your actual project directory, then run /tk:setup again."
+       }
+
+   If `$inSource` is true, **STOP**: do not run any later step, do not create the
+   venv or seed config. Report the abort to the user and tell them to `cd` into
+   their target project. Otherwise continue to step 1.
+
 1. **Virtual env** — if `.venv\` does not exist (or `--force`):
 
        py -3.13 -m venv .venv
