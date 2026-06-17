@@ -7,6 +7,10 @@ VALID_LEVELS = {"UT", "IT", "ST"}
 VALID_PRIORITIES = {"Low", "Medium", "High"}
 VALID_STATUSES = {"OK", "NG", "N/A"}
 VALID_BROWSERS = {"chrome", "safari"}
+VALID_CATEGORIES = {
+    "UI", "Function", "Validation", "Boundary", "BusinessRule",
+    "API", "ErrorHandling", "Security", "UserBehavior",
+}
 
 
 class SchemaError(Exception):
@@ -40,6 +44,9 @@ class Testcase:
     type: str = "IT"
     priority: str = "Medium"
     strategy_ref: str = ""
+    category: str = ""
+    technique: str = ""
+    target: str = ""
     precondition: str = ""
     steps: list = field(default_factory=list)
     expected: list = field(default_factory=list)
@@ -82,6 +89,9 @@ def _testcase(d: dict) -> Testcase:
         type=d.get("type", "IT"),
         priority=d.get("priority", "Medium"),
         strategy_ref=d.get("strategy_ref", ""),
+        category=d.get("category", ""),
+        technique=d.get("technique", ""),
+        target=d.get("target", ""),
         precondition=d.get("precondition", ""),
         steps=list(d.get("steps") or []),
         expected=list(d.get("expected") or []),
@@ -91,6 +101,8 @@ def _testcase(d: dict) -> Testcase:
         raise SchemaError(f"testcase {tc.id}: invalid type '{tc.type}'")
     if tc.priority not in VALID_PRIORITIES:
         raise SchemaError(f"testcase {tc.id}: invalid priority '{tc.priority}'")
+    if tc.category and tc.category not in VALID_CATEGORIES:
+        raise SchemaError(f"testcase {tc.id}: invalid category '{tc.category}'")
     return tc
 
 
