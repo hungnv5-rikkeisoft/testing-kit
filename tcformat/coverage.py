@@ -88,5 +88,5 @@ def check_depth(inventory, checklists, screen) -> DepthReport:
         expected=len(expected_cells),
         covered=len(expected_cells) - len(gaps),
         gaps=gaps, skipped=skipped,
-        unknown_techniques=unknown_techniques,
+        unknown_techniques=sorted(unknown_techniques),
         kinds_without_checklist=kinds_without_checklist)

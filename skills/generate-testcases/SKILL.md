@@ -79,5 +79,5 @@ then render the team-format xlsx and verify 100% strategy coverage.
 - `testcases/<screen-slug>.yaml` (the contract, reviewable/diffable; cases
   tagged with category/technique/target)
 - `testcases/<screen-slug>.xlsx` (team format, sheet "4.x <screen>")
-- A short coverage summary: objects covered, depth_rate, and any justified
-  depth gaps.
+- A short coverage summary: objects covered (bước 3); depth_rate và justified
+  depth gaps từ `tk-coverage` (bước 4).

@@ -65,8 +65,9 @@ def test_matrix_out_written(tmp_path):
     argv = _setup(tmp_path, testcases=[
         {"id": "A", "target": "btn", "technique": "single-action"}])
     argv += ["--matrix-out", str(out)]
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit) as e:
         main(argv)
+    assert e.value.code == 0
     assert out.exists()
     assert "technique" in out.read_text(encoding="utf-8")
 
