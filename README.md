@@ -79,8 +79,9 @@ The raw CLI below remains the source of truth and works outside Claude Code.
 
     py -3.13 -m venv .venv
     .venv\Scripts\python -m pip install -r requirements.txt
-    copy config\config.example.yaml config\config.yaml   # then edit base_url
-    copy config\users.example.yaml  config\users.yaml     # for permission tests
+    copy config\config.example.yaml  config\config.yaml    # then edit base_url
+    copy config\users.example.yaml   config\users.yaml     # for permission tests
+    copy config\devices.example.yaml config\devices.yaml   # device matrix
 
 Stage 2 drives the browser through the **Playwright MCP** server (not a Python
 package); see `/tk:setup` to verify it is connected.
