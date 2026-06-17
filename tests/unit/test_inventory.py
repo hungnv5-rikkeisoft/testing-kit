@@ -55,3 +55,20 @@ def test_unknown_kind_raises(tmp_path):
     y = "screen: S\nelements:\n  - id: x\n    kind: widget\n"
     with pytest.raises(InventoryError):
         load_inventory(_write(tmp_path, y))
+
+
+def test_skip_techniques_loaded(tmp_path):
+    p = tmp_path / "s.inventory.yaml"
+    p.write_text(
+        "screen: S\n"
+        "elements:\n"
+        "  - id: name\n"
+        "    kind: input\n"
+        "    skip_techniques: [boundary, max-length]\n"
+        "  - id: btn\n"
+        "    kind: button\n",
+        encoding="utf-8")
+    inv = load_inventory(str(p))
+    by_id = {e.id: e for e in inv.elements}
+    assert by_id["name"].skip_techniques == ["boundary", "max-length"]
+    assert by_id["btn"].skip_techniques == []   # default empty

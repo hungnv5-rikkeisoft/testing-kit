@@ -28,6 +28,7 @@ class Element:
     method: str = ""
     path: str = ""
     params: list = field(default_factory=list)
+    skip_techniques: list = field(default_factory=list)
 
 
 @dataclass
@@ -54,6 +55,7 @@ def _element(d: dict) -> Element:
         method=d.get("method", ""),
         path=d.get("path", ""),
         params=list(d.get("params") or []),
+        skip_techniques=list(d.get("skip_techniques") or []),
     )
 
 
