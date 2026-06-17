@@ -45,31 +45,33 @@ then render the team-format xlsx and verify 100% strategy coverage.
      maps to a strategy object.
    - Write steps/expected concretely enough for a browser agent to execute.
 
-3. **Validate + render + report (refs AND depth):**
+3. **Validate + render + check coverage refs (breadth):**
    ```
    ./.venv/Scripts/python.exe -c "
    from tcformat.schema import load_screen
    from tcformat.render_xlsx import render
-   from tcformat.coverage import check_coverage, check_depth
-   from tcformat.inventory import load_inventory
-   from tcformat.checklists import load_checklists
+   from tcformat.coverage import check_coverage
    from tcformat.strategy import list_objects
    from tcformat.resources import default_template, default_strategy
    sc = load_screen('testcases/<screen-slug>.yaml')
-   inv = load_inventory('testcases/<screen-slug>.inventory.yaml')
    render([sc], default_template(), 'testcases/<screen-slug>.xlsx')
    refs = {o['ref'] for o in list_objects(default_strategy(),'2_IntergrationTesting') if o['ref']}
    cov = check_coverage(sc, refs)
-   dep = check_depth(inv, load_checklists(), sc)
    print('missing refs:', sorted(cov.missing)); print('unknown refs:', sorted(cov.unknown))
-   print('depth gaps:', dep.gaps); print('depth_rate:', round(dep.depth_rate, 2))
    "
    ```
+   Lặp lại cho đến khi `missing` và `unknown` đều rỗng.
 
-4. **Loop** until `missing`/`unknown` are empty AND `depth gaps` is empty or
-   every remaining gap is explicitly justified in the coverage summary
-   (e.g. element genuinely has no such technique). The depth report is advisory
-   in this phase — do not ignore it.
+4. **Kiểm tra độ phủ chiều sâu (bắt buộc — cổng Stage 1):** Sau khi sinh case, chạy:
+   ```bash
+   ./.venv/Scripts/tk-coverage --screen testcases/<screen>.yaml --config config.yaml
+   ```
+   CLI exit **non-zero** khi còn ô element×technique chưa có case và chưa justify.
+   Nếu fail: bổ sung test case cho ô thiếu, HOẶC thêm `skip_techniques: [<technique>, ...]`
+   (kèm lý do rõ ràng) cho element trong `testcases/<screen>.inventory.yaml`, rồi chạy lại.
+   **Chỉ chuyển sang Stage 2 khi `tk-coverage` exit 0.**
+   Cảnh báo (`unknown techniques`, `kinds without checklist`) cần xem và xử lý — sửa tag sai
+   hoặc bổ sung kind vào `checklists.yaml` — nhưng KHÔNG chặn gate.
 
 ## Output
 
