@@ -23,6 +23,7 @@ evidence/
 # Real config (keep the *.example.yaml templates)
 config/config.yaml
 config/users.yaml
+config/devices.yaml
 
 # Playwright
 test-results/
