@@ -5,23 +5,49 @@ Reusable Python + Playwright toolkit automating the project test strategy as a
 test-case format, producing the team xlsx report with an exit-criteria gate
 (strategy sheet 6).
 
-## Install (as a Claude Code plugin)
+## Two-step workflow
 
-1.  Add the marketplace (point at this repo's git URL):
+Testing-Kit is **install-once, configure-per-project**. The plugin code is shared
+across every project; each project keeps its own config and test data.
+
+| Component | Location | Scope |
+| --- | --- | --- |
+| Plugin code (`commands/`, `skills/`, `tcformat/`, `toolkit/`) | plugin cache (`${CLAUDE_PLUGIN_ROOT}`) | shared across projects |
+| `config.yaml`, `users.yaml`, `devices.yaml` | your project dir (seeded by `/tk:setup`) | per project |
+| `testcases/`, `evidence/`, `reports/`, `.venv/` | your project dir | per project |
+| strategy.xlsx + template.xlsx | bundled in the package, override via `config.yaml` | shared, override per project |
+
+### Step 1 — Install the plugin (once)
+
+Team / shared (from git):
 
     /plugin marketplace add https://github.com/hungnv5-rikkeisoft/testing-kit.git
-
-2.  Install the plugin:
-
     /plugin install testing-kit
 
-3.  In your project directory, bootstrap the environment:
+Local (plugin author, offline) — point the marketplace at this repo's path:
+
+    /plugin marketplace add D:\Testing-kit
+    /plugin install testing-kit
+
+Nothing project-specific is stored in the plugin cache.
+
+### Step 2 — Per project
+
+1.  Open Claude Code with the working directory set to your target project.
+2.  Bootstrap the project:
 
         /tk:setup
 
-    This creates `.venv`, installs the bundled framework, verifies the Playwright
-    MCP server, and seeds `config/`. Then edit `config/config.yaml` (`base_url`,
-    thresholds, optional `template_path`/`strategy_path` overrides).
+    Creates a per-project `.venv`, installs the bundled framework, verifies the
+    Playwright MCP server, and seeds `config/`, `testcases/`, `evidence/`,
+    `reports/`. **Running `/tk:setup` inside this plugin's own source repo aborts**
+    — it is for consumer projects only.
+3.  Edit `config/config.yaml` (`base_url`, thresholds, optional
+    `template_path`/`strategy_path`), `config/users.yaml`, and `config/devices.yaml`.
+4.  Run the pipeline (next section).
+
+> **Note:** `D:\Testing-kit` is the plugin's source/dev repo, not a place to run
+> real tests. Its `config/`/`testcases/`/`evidence/` are dev fixtures.
 
 ## Run a screen
 
