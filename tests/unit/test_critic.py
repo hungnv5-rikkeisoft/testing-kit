@@ -153,3 +153,54 @@ def test_render_clean_depends_no_gate_marker():
     md = render_critic_md(rep, "S")
     assert "field_b depends_on field_a — đã có case" in md
     assert "(fail gate)" not in md
+
+
+import pytest
+
+
+def _write(tmp_path, inv_body, sc_body):
+    inv = tmp_path / "s.inventory.yaml"
+    inv.write_text("screen: S\n" + inv_body, encoding="utf-8")
+    sc = tmp_path / "s.yaml"
+    sc.write_text("screen: S\n" + sc_body, encoding="utf-8")
+    return sc, inv
+
+
+def test_cli_exits_1_on_unlinked_depends(tmp_path, capsys):
+    from tcformat.critic_cli import main
+    sc, inv = _write(
+        tmp_path,
+        "elements:\n  - {id: field_a, kind: input}\n"
+        "  - {id: field_b, kind: input, depends_on: [field_a]}\n",
+        "testcases: []\n")
+    with pytest.raises(SystemExit) as e:
+        main(["--screen", str(sc), "--inventory", str(inv)])
+    assert e.value.code == 1
+    out = capsys.readouterr().out
+    assert "Critic review — S" in out          # Unicode printed, no crash
+
+
+def test_cli_exits_0_when_depends_linked(tmp_path):
+    from tcformat.critic_cli import main
+    sc, inv = _write(
+        tmp_path,
+        "elements:\n  - {id: field_a, kind: input}\n"
+        "  - {id: field_b, kind: input, depends_on: [field_a]}\n",
+        "testcases:\n"
+        "  - {id: A, target: field_b, steps: ['chọn field_a']}\n")
+    with pytest.raises(SystemExit) as e:
+        main(["--screen", str(sc), "--inventory", str(inv)])
+    assert e.value.code == 0
+
+
+def test_cli_writes_out_file(tmp_path):
+    from tcformat.critic_cli import main
+    sc, inv = _write(
+        tmp_path,
+        "elements:\n  - {id: field_a, kind: input}\n",
+        "testcases: []\n")
+    out = tmp_path / "rep.md"
+    with pytest.raises(SystemExit):
+        main(["--screen", str(sc), "--inventory", str(inv), "--out", str(out)])
+    assert out.exists()
+    assert "Critic review — S" in out.read_text(encoding="utf-8")

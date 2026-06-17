@@ -16,6 +16,7 @@ dev = ["pytest>=8", "flask>=3"]
 tk-report = "tcformat.report_cli:main"
 tk-strategy = "tcformat.strategy:main"
 tk-coverage = "tcformat.coverage_cli:main"
+tk-critic = "tcformat.critic_cli:main"
 
 [tool.setuptools]
 packages = ["tcformat", "toolkit"]
