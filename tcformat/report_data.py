@@ -1,8 +1,11 @@
 """Aggregate Stage 2 YAML results into report counts + exit-criteria verdict.
 
 Pure data layer (no openpyxl). The unit of counting is a "run" = one
-(testcase x browser) pair; a run is "executed" when its status is not None.
-Pass-rate counts only executed runs (strategy sheet 6 exit criteria).
+(testcase x browser) pair. A run is "planned" (in scope) when it has any
+recorded status (OK/NG/N/A); a run with no status (None) was never in scope
+- e.g. a testcase outside the ~25% Safari subset. A run is "executed" only
+when it produced a verdict (OK or NG); N/A means planned-but-not-executed.
+Pass-rate = OK / (OK + NG) over executed runs (strategy sheet 6 exit criteria).
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
@@ -21,8 +24,8 @@ class ScreenReport:
     chrome: dict           # {"ok": int, "ng": int, "na": int}
     safari: dict
     bugs: int              # number of NG runs on this screen
-    planned: int           # 2 * number of testcases
-    executed: int          # runs with status != None
+    planned: int           # in-scope runs (any recorded status: OK/NG/N/A)
+    executed: int          # runs with a verdict (OK or NG); excludes N/A
 
 
 @dataclass
@@ -57,17 +60,17 @@ def aggregate(screens, criteria=None) -> ReportData:
     for sc in screens:
         c, s = _blank(), _blank()
         bugs = 0
-        planned = 0
         for tc in sc.testcases:
             for br_name in BROWSERS:
-                planned += 1
                 status = getattr(tc.result, br_name).status
                 _tally(c if br_name == "chrome" else s, status)
                 if status == "NG":
                     bugs += 1
                     sev = _SEVERITY.get(tc.priority, "Medium")
                     bugs_by_severity[sev] = bugs_by_severity.get(sev, 0) + 1
-        executed = sum(c.values()) + sum(s.values())
+        # planned = in-scope runs (OK+NG+N/A); executed = verdicts (OK+NG)
+        planned = sum(c.values()) + sum(s.values())
+        executed = c["ok"] + c["ng"] + s["ok"] + s["ng"]
         screen_reports.append(ScreenReport(
             screen=sc.screen, chrome=c, safari=s, bugs=bugs,
             planned=planned, executed=executed))
@@ -75,8 +78,7 @@ def aggregate(screens, criteria=None) -> ReportData:
 
     tot_ok = sum(r.chrome["ok"] + r.safari["ok"] for r in screen_reports)
     tot_ng = sum(r.chrome["ng"] + r.safari["ng"] for r in screen_reports)
-    tot_na = sum(r.chrome["na"] + r.safari["na"] for r in screen_reports)
-    executed = tot_ok + tot_ng + tot_na
+    executed = tot_ok + tot_ng
     summary = Summary(total=executed, passed=tot_ok, failed=tot_ng,
                       bugs_by_severity=bugs_by_severity)
     ok, reasons = evaluate_exit_criteria(summary, criteria)

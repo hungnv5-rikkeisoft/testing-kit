@@ -10,20 +10,20 @@ def _tc(tc_id, priority="High", chrome=None, safari=None):
 
 
 def test_counts_only_executed_runs():
-    # 2 testcases, only some browser runs executed (status != None)
+    # 2 testcases, mix of in-scope (OK/NG/N/A) and out-of-scope (null) runs
     sc = Screen(screen="S", test_level="IT", testcases=[
         _tc("UI_01", chrome=BrowserResult(status="OK")),          # chrome ran, safari null
         _tc("UI_02", chrome=BrowserResult(status="NG"),
             safari=BrowserResult(status="N/A")),
     ])
     data = aggregate([sc])
-    # planned = 2 testcases * 2 browsers = 4 ; executed = OK+NG+N/A = 3
-    assert data.planned == 4
-    assert data.executed == 3
+    # planned = in-scope runs (OK+NG+N/A) = 3 ; executed = verdicts (OK+NG) = 2
+    assert data.planned == 3
+    assert data.executed == 2
     assert data.summary.passed == 1   # one OK
     assert data.summary.failed == 1   # one NG
-    # pass-rate = OK / executed = 1/3
-    assert round(data.summary.pass_rate, 4) == round(1 / 3, 4)
+    # pass-rate = OK / (OK+NG) = 1/2  (N/A excluded)
+    assert data.summary.pass_rate == 0.5
 
 
 def test_ng_maps_priority_to_severity():
@@ -65,7 +65,7 @@ def test_multi_screen_and_safari_aggregation():
     ])
     data = aggregate([s1, s2])
     assert len(data.screens) == 2
-    assert data.planned == 4          # 2 testcases * 2 browsers
+    assert data.planned == 3          # in-scope runs: OK, NG, OK (B.chrome null)
     assert data.executed == 3         # OK + NG + OK
     assert data.summary.passed == 2
     assert data.summary.failed == 1
@@ -74,12 +74,13 @@ def test_multi_screen_and_safari_aggregation():
     assert data.screens[1].safari == {"ok": 1, "ng": 0, "na": 0}
 
 
-def test_all_na_has_executed_but_zero_pass_rate():
+def test_all_na_is_planned_but_not_executed():
     sc = Screen(screen="S", test_level="IT", testcases=[
         _tc("A", chrome=BrowserResult(status="N/A")),
     ])
     data = aggregate([sc])
-    assert data.executed == 1
+    assert data.planned == 1     # N/A run is in scope
+    assert data.executed == 0    # but produced no verdict
     assert data.summary.passed == 0
     assert data.summary.pass_rate == 0.0
     assert data.exit_ok is False
