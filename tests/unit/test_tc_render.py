@@ -44,3 +44,26 @@ def test_render_fills_testcase_sheet(tmp_path):
     assert "Form shows" in (ws.cell(r, 8).value or "")
     assert ws.cell(r, 9).value == "IT"
     assert ws.cell(r, 10).value == "High"
+
+
+def test_render_flattens_dict_expected(tmp_path):
+    sc = Screen(screen="Assert Screen", test_level="IT", testcases=[
+        Testcase(id="VAL_01", section="VALIDATION", main_item="Submit",
+                 type="IT", priority="High",
+                 steps=["Submit empty"],
+                 expected=[
+                     {"field": "Field A", "value": "XXX"},
+                     {"field": "Field B", "enabled": False},
+                     {"request": "POST /api/x"},
+                 ]),
+    ])
+    out = tmp_path / "assert.xlsx"
+    render([sc], TEMPLATE, str(out))
+
+    wb = load_workbook(out)
+    ws = _sheet_by_c1(wb, "Assert Screen")
+    cell = ws.cell([r for r in range(10, ws.max_row + 1)
+                    if ws.cell(r, 2).value == "VAL_01"][0], 8).value
+    assert "1. Field A = XXX" in cell
+    assert "2. Field B disabled" in cell
+    assert "3. POST /api/x" in cell

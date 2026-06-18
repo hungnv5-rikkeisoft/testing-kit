@@ -7,6 +7,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from openpyxl import load_workbook
+from tcformat.schema import flatten_expected
 
 DATA_START = 10
 LAST_COL = 18  # through column R (Chrome+Safari result columns K..R)
@@ -77,7 +78,7 @@ def _write(ws, testcases, start: int):
         ws.cell(row, 7).value = "\n".join(
             f"{i + 1}. {s}" for i, s in enumerate(tc.steps))
         ws.cell(row, 8).value = "\n".join(
-            f"{i + 1}. {e}" for i, e in enumerate(tc.expected))
+            f"{i + 1}. {flatten_expected(e)}" for i, e in enumerate(tc.expected))
         ws.cell(row, 9).value = tc.type
         ws.cell(row, 10).value = tc.priority
         _write_result(ws, row, tc.result)
