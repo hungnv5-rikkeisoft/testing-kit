@@ -1,6 +1,6 @@
 {
   "name": "testing-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Config-driven web test-automation pipeline: generate test cases -> run via Playwright MCP -> report in the team xlsx format, with an exit-criteria gate.",
   "author": { "name": "Hungnv5" },
   "keywords": ["testing", "playwright", "qa", "test-automation", "xlsx"]
