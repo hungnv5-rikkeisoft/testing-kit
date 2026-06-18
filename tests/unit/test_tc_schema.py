@@ -61,3 +61,101 @@ def test_roundtrip(tmp_path):
     dump_screen(sc, out)
     sc2 = load_screen(out)
     assert asdict(sc) == asdict(sc2)
+
+
+from tcformat.schema import flatten_expected
+
+DICT_SAMPLE = """
+screen: "S"
+test_level: IT
+testcases:
+  - id: VAL_01
+    type: IT
+    priority: High
+    steps: ["Submit empty form"]
+    expected:
+      - "Plain string still works"
+      - {field: "Field A", value: "XXX"}
+      - {field: "Field B", enabled: false}
+      - {request: "POST /api/x"}
+      - {redirect: "/home"}
+"""
+
+
+def test_mixed_expected_loads(tmp_path):
+    sc = load_screen(_write(tmp_path, DICT_SAMPLE))
+    exp = sc.testcases[0].expected
+    assert exp[0] == "Plain string still works"
+    assert exp[1] == {"field": "Field A", "value": "XXX"}
+    assert exp[2] == {"field": "Field B", "enabled": False}
+
+
+def test_expected_unknown_key_raises(tmp_path):
+    y = DICT_SAMPLE.replace('{field: "Field A", value: "XXX"}', '{field: "A", foo: 1}')
+    with pytest.raises(SchemaError):
+        load_screen(_write(tmp_path, y))
+
+
+def test_expected_no_assertion_keys_raises(tmp_path):
+    # field-only dict has no clause-producing key
+    y = DICT_SAMPLE.replace('{field: "Field A", value: "XXX"}', '{field: "A"}')
+    with pytest.raises(SchemaError):
+        load_screen(_write(tmp_path, y))
+
+
+def test_expected_empty_dict_raises(tmp_path):
+    y = DICT_SAMPLE.replace('{field: "Field A", value: "XXX"}', '{}')
+    with pytest.raises(SchemaError):
+        load_screen(_write(tmp_path, y))
+
+
+def test_expected_wrong_type_raises(tmp_path):
+    y = DICT_SAMPLE.replace('{field: "Field A", value: "XXX"}', '[1, 2]')
+    with pytest.raises(SchemaError):
+        load_screen(_write(tmp_path, y))
+
+
+def test_flatten_string_passthrough():
+    assert flatten_expected("just text") == "just text"
+
+
+def test_flatten_value_with_field():
+    assert flatten_expected({"field": "Field A", "value": "XXX"}) == "Field A = XXX"
+
+
+def test_flatten_value_without_field():
+    assert flatten_expected({"value": "XXX"}) == "= XXX"
+
+
+def test_flatten_enabled_false_is_disabled():
+    assert flatten_expected({"field": "Field B", "enabled": False}) == "Field B disabled"
+
+
+def test_flatten_required_true():
+    assert flatten_expected({"field": "Email", "required": True}) == "Email required"
+
+
+def test_flatten_required_false_is_optional():
+    assert flatten_expected({"field": "Phone", "required": False}) == "Phone optional"
+
+
+def test_flatten_button_state():
+    assert flatten_expected({"field": "Submit", "button_state": "enabled"}) == "Submit button enabled"
+
+
+def test_flatten_request_and_redirect():
+    assert flatten_expected({"request": "POST /api/x"}) == "POST /api/x"
+    assert flatten_expected({"redirect": "/home"}) == "redirect /home"
+
+
+def test_flatten_multiple_keys_joined_in_order():
+    item = {"field": "Field A", "value": "1", "required": True}
+    assert flatten_expected(item) == "Field A = 1; Field A required"
+
+
+def test_roundtrip_dict_expected(tmp_path):
+    sc = load_screen(_write(tmp_path, DICT_SAMPLE))
+    out = tmp_path / "o.yaml"
+    dump_screen(sc, out)
+    sc2 = load_screen(out)
+    assert asdict(sc) == asdict(sc2)

@@ -44,6 +44,13 @@ then render the team-format xlsx and verify 100% strategy coverage.
      or `screen` for cross-cutting cases). Keep `strategy_ref` where the case
      maps to a strategy object.
    - Write steps/expected concretely enough for a browser agent to execute.
+   - An `expected` item may be a plain string OR a structured assertion dict
+     (mọi key optional): `{field, value, enabled, required, button_state,
+     request, redirect}`. Một dict mô tả ĐÚNG MỘT subject (`field`); nhiều field
+     → nhiều phần tử trong list. Ưu tiên dạng dict cho case Validation/Function
+     khi một assertion chính xác (giá trị field, enabled/required, lời gọi API,
+     redirect) rõ hơn câu chữ. Khi render xlsx nó được *làm phẳng* thành text
+     (vd `Field A = XXX; Field B disabled`) nên format deliverable KHÔNG đổi.
 
 3. **Validate + render + check coverage refs (breadth):**
    ```

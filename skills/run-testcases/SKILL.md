@@ -32,7 +32,11 @@ deterministic helper `tcformat.runlog`.
    the steps are natural language, so map them to concrete actions yourself.
 4. After EACH step: `browser_take_screenshot` saving to
    `evidence/<slug>/chrome/<ID>/step_<N>.png` (N starts at 1).
-5. Judge the `expected` list:
+5. Judge the `expected` list. An `expected` item is either a sentence OR a
+   structured assertion dict — `{field, value, enabled, required, button_state,
+   request, redirect}` (e.g. `{field: Email, required: true}` = the Email field
+   must be required; `{request: "POST /api/x"}` = that call must fire). Judge each
+   item the same way regardless of form.
    - All expected met → status `OK`.
    - An expected fails → status `NG`; pass a `--note` describing the bug (and a
      `--bug-id` if you have one).

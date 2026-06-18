@@ -252,3 +252,17 @@ def test_render_warnings_section_present():
     assert "### Cảnh báo (không chặn gate)" in md
     assert "unknown techniques:" in md
     assert "kinds without checklist:" in md
+
+
+def test_depends_linked_via_dict_expected():
+    inv = _inv([
+        Element(id="field_a", kind="input", label="Tỉnh/Thành"),
+        Element(id="field_b", kind="input", depends_on=["field_a"]),
+    ])
+    sc = Screen(screen="S", testcases=[
+        Testcase(id="A", target="field_b",
+                 expected=[{"field": "Quận", "value": "lọc theo Tỉnh/Thành"}]),
+    ])
+    rep = run_critic(inv, CHECKLISTS, sc, _depth(inv, sc))
+    d = next(x for x in rep.depends if x.element_id == "field_b")
+    assert d.linked is True

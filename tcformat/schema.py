@@ -12,6 +12,11 @@ VALID_CATEGORIES = {
     "API", "ErrorHandling", "Security", "UserBehavior",
 }
 
+EXPECTED_KEYS = {
+    "field", "value", "enabled", "required",
+    "button_state", "request", "redirect",
+}
+
 
 class SchemaError(Exception):
     pass
@@ -77,11 +82,60 @@ def _result(d) -> Result:
                   safari=_browser_result(d.get("safari")))
 
 
+def _validate_expected(tc_id: str, items: list) -> list:
+    out = []
+    for item in items:
+        if isinstance(item, str):
+            out.append(item)
+        elif isinstance(item, dict):
+            unknown = sorted(set(item) - EXPECTED_KEYS)
+            if unknown:
+                raise SchemaError(
+                    f"testcase {tc_id}: expected assertion has unknown key '{unknown[0]}'")
+            if not any(k != "field" and item[k] is not None for k in item):
+                raise SchemaError(
+                    f"testcase {tc_id}: expected assertion has no assertion keys")
+            out.append(item)
+        else:
+            raise SchemaError(
+                f"testcase {tc_id}: expected item must be str or dict, "
+                f"got {type(item).__name__}")
+    return out
+
+
+def flatten_expected(item) -> str:
+    """Flatten one `expected` item (str or assertion dict) into display text.
+
+    One dict describes one subject (`field`); attribute clauses are joined by
+    '; ' in a fixed key order. Absent or None keys are skipped.
+    """
+    if isinstance(item, str):
+        return item
+    if not isinstance(item, dict):
+        return str(item)
+    prefix = f"{item['field']} " if item.get("field") else ""
+    clauses = []
+    if item.get("value") is not None:
+        clauses.append(f"{prefix}= {item['value']}".strip())
+    if item.get("enabled") is not None:
+        clauses.append(f"{prefix}{'enabled' if item['enabled'] else 'disabled'}".strip())
+    if item.get("required") is not None:
+        clauses.append(f"{prefix}{'required' if item['required'] else 'optional'}".strip())
+    if item.get("button_state") is not None:
+        clauses.append(f"{prefix}button {item['button_state']}".strip())
+    if item.get("request") is not None:
+        clauses.append(str(item["request"]))
+    if item.get("redirect") is not None:
+        clauses.append(f"redirect {item['redirect']}")
+    return "; ".join(clauses)
+
+
 def _testcase(d: dict) -> Testcase:
     if not d.get("id"):
         raise SchemaError("testcase missing required 'id'")
+    tc_id = str(d["id"])
     tc = Testcase(
-        id=str(d["id"]),
+        id=tc_id,
         section=d.get("section", ""),
         main_item=d.get("main_item", ""),
         middle_item=d.get("middle_item", ""),
@@ -94,7 +148,7 @@ def _testcase(d: dict) -> Testcase:
         target=d.get("target", ""),
         precondition=d.get("precondition", ""),
         steps=list(d.get("steps") or []),
-        expected=list(d.get("expected") or []),
+        expected=_validate_expected(tc_id, list(d.get("expected") or [])),
         result=_result(d.get("result")),
     )
     if tc.type not in VALID_LEVELS:
