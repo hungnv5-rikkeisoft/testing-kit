@@ -9,7 +9,7 @@ Pure logic: no I/O, no printing, no exit.
 from __future__ import annotations
 from dataclasses import dataclass, field
 
-from tcformat.schema import VALID_CATEGORIES
+from tcformat.schema import VALID_CATEGORIES, flatten_expected
 
 # VALID_CATEGORIES is an unordered set; pin a stable order for output.
 CATEGORY_ORDER = (
@@ -85,7 +85,9 @@ def run_critic(inventory, checklists, screen, depth_report) -> CriticReport:
                 if tc.target != el.id:
                     continue
                 text = " ".join(
-                    list(tc.steps) + list(tc.expected) + [tc.precondition or ""]).lower()
+                    list(tc.steps)
+                    + [flatten_expected(e) for e in tc.expected]
+                    + [tc.precondition or ""]).lower()
                 if any(n in text for n in needles):
                     linked = True
                     break
