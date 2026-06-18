@@ -73,6 +73,18 @@ then render the team-format xlsx and verify 100% strategy coverage.
    Cảnh báo (`unknown techniques`, `kinds without checklist`) cần xem và xử lý — sửa tag sai
    hoặc bổ sung kind vào `checklists.yaml` — nhưng KHÔNG chặn gate.
 
+5. **Critic review (bán-tự-động — bước cuối Stage 1):** Chạy:
+   ```bash
+   ./.venv/Scripts/tk-critic --screen testcases/<screen>.yaml --config config.yaml \
+       [--out reports/<screen>_critic.md]
+   ```
+   - **Cổng nhẹ:** nếu có `depends_on` chưa-liên-kết (exit 1), bổ sung case kiểm tương
+     tác field con↔cha (case target field con, có nhắc tới field cha) rồi chạy lại.
+   - **Phần phán đoán (AI):** với mỗi nhóm gắn `⚠ NGOÀI MA TRẬN` (đặc biệt `BusinessRule`,
+     `UI`) và các ràng buộc required-theo-mode / liên field, **tự đối chiếu design doc** và
+     bổ sung case còn thiếu — ma trận cơ học (`tk-coverage`) KHÔNG bắt được các nhóm này.
+   - Chỉ kết thúc Stage 1 khi `tk-coverage` exit 0 **và** đã review xong các nhóm `⚠` của critic.
+
 ## Output
 
 - `testcases/<screen-slug>.inventory.yaml` (element inventory, reviewable)
@@ -81,3 +93,5 @@ then render the team-format xlsx and verify 100% strategy coverage.
 - `testcases/<screen-slug>.xlsx` (team format, sheet "4.x <screen>")
 - A short coverage summary: objects covered (bước 3); depth_rate và justified
   depth gaps từ `tk-coverage` (bước 4).
+- `reports/<screen>_critic.md` (tuỳ chọn, từ `--out`): checklist review theo nhóm
+  + nhóm cần AI/người phán đoán + depends_on chưa liên kết.
