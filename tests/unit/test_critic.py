@@ -204,3 +204,51 @@ def test_cli_writes_out_file(tmp_path):
         main(["--screen", str(sc), "--inventory", str(inv), "--out", str(out)])
     assert out.exists()
     assert "Critic review — S" in out.read_text(encoding="utf-8")
+
+
+def test_render_summary_line_when_no_blocking():
+    """Fully clean report: no gaps, no unlinked depends, no warnings -> summary line."""
+    inv = _inv([Element(id="btn", kind="button")])
+    sc = Screen(screen="S", testcases=[
+        Testcase(id="TC-1", target="btn", technique="single-action", category="Function"),
+        Testcase(id="TC-2", target="screen", technique="url-tamper", category="Security"),
+    ])
+    rep = run_critic(inv, CHECKLISTS, sc, _depth(inv, sc))
+    md = render_critic_md(rep, "S")
+    assert "Không có phát hiện chặn — vẫn cần AI review nhóm ⚠" in md
+
+    # Confirm the two pre-existing render tests would NOT get the summary line.
+    # test_render_marks_outside_matrix_and_gate: has gaps (input element uncovered)
+    inv2 = _inv([
+        Element(id="field_a", kind="input"),
+        Element(id="field_b", kind="input", depends_on=["field_a"]),
+    ])
+    sc2 = Screen(screen="S", testcases=[])
+    rep2 = run_critic(inv2, CHECKLISTS, sc2, _depth(inv2, sc2))
+    md2 = render_critic_md(rep2, "S")
+    assert "Không có phát hiện chặn" not in md2
+
+    # test_render_clean_depends_no_gate_marker: has gaps (input elements mostly uncovered)
+    inv3 = _inv([
+        Element(id="field_a", kind="input", label="Tỉnh"),
+        Element(id="field_b", kind="input", depends_on=["field_a"]),
+    ])
+    sc3 = Screen(screen="S", testcases=[
+        Testcase(id="A", target="field_b", steps=["liên kết field_a"]),
+    ])
+    rep3 = run_critic(inv3, CHECKLISTS, sc3, _depth(inv3, sc3))
+    md3 = render_critic_md(rep3, "S")
+    assert "Không có phát hiện chặn" not in md3
+
+
+def test_render_warnings_section_present():
+    """Report with unknown techniques + kinds without checklist -> Cảnh báo section."""
+    inv = _inv([Element(id="lnk", kind="link")])  # link has no checklist
+    sc = Screen(screen="S", testcases=[
+        Testcase(id="A", target="lnk", technique="typo"),  # unknown technique
+    ])
+    rep = run_critic(inv, CHECKLISTS, sc, _depth(inv, sc))
+    md = render_critic_md(rep, "S")
+    assert "### Cảnh báo (không chặn gate)" in md
+    assert "unknown techniques:" in md
+    assert "kinds without checklist:" in md

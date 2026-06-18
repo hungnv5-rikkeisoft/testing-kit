@@ -85,7 +85,7 @@ def run_critic(inventory, checklists, screen, depth_report) -> CriticReport:
                 if tc.target != el.id:
                     continue
                 text = " ".join(
-                    list(tc.steps) + list(tc.expected) + [tc.precondition]).lower()
+                    list(tc.steps) + list(tc.expected) + [tc.precondition or ""]).lower()
                 if any(n in text for n in needles):
                     linked = True
                     break
@@ -139,5 +139,11 @@ def render_critic_md(report, screen_name) -> str:
         if report.kinds_without_checklist:
             kw = ", ".join(f"{e}({k})" for e, k in report.kinds_without_checklist)
             lines.append(f"- kinds without checklist: {kw}")
+
+    has_gaps = any(cf.gaps for cf in report.categories)
+    has_gate_fail = any(not d.linked for d in report.depends)
+    has_warnings = bool(report.unknown_techniques or report.kinds_without_checklist)
+    if not (has_gaps or has_gate_fail or has_warnings):
+        lines += ["", "Không có phát hiện chặn — vẫn cần AI review nhóm ⚠"]
 
     return "\n".join(lines)

@@ -80,6 +80,9 @@ then render the team-format xlsx and verify 100% strategy coverage.
    ```
    - **Cổng nhẹ:** nếu có `depends_on` chưa-liên-kết (exit 1), bổ sung case kiểm tương
      tác field con↔cha (case target field con, có nhắc tới field cha) rồi chạy lại.
+     _(Lưu ý: kiểm tra liên kết là heuristic khớp substring id/label của field cha trong
+     text của case — với id/label ngắn, một dấu `✓ đã có case` vẫn nên được người liếc
+     mắt kiểm lại.)_
    - **Phần phán đoán (AI):** với mỗi nhóm gắn `⚠ NGOÀI MA TRẬN` (đặc biệt `BusinessRule`,
      `UI`) và các ràng buộc required-theo-mode / liên field, **tự đối chiếu design doc** và
      bổ sung case còn thiếu — ma trận cơ học (`tk-coverage`) KHÔNG bắt được các nhóm này.
