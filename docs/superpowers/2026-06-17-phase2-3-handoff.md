@@ -1,11 +1,12 @@
 # Handoff — Coverage-depth Phase 2 & 3
 
-> Cập nhật: 2026-06-17. Tài liệu này để session/agent kế tiếp tiếp nối phần **Phase 2 & 3**
+> Cập nhật: 2026-06-18. Tài liệu này để session/agent kế tiếp tiếp nối phần **Phase 2 & 3**
 > của hướng "coverage-depth" (sinh test case có chiều sâu). Đọc file này trước, rồi mở
 > spec/plan Phase 1 để biết nền đã có.
 >
-> **Trạng thái: Phase 2 & 3b ĐÃ XONG. Còn lại Phase 3a (structured expected).** Xem mục §2 cho chi tiết
-> những gì Phase 2 đã giao; Phase 3 (mục §3) là việc tiếp theo.
+> **Trạng thái: TẤT CẢ Phase 1, 2, 3a, 3b ĐÃ XONG — đã merge `main`.** Hướng coverage-depth hoàn tất.
+> Xem §2 cho Phase 2, §3 cho Phase 3 (3a structured expected + 3b critic linter). Không còn việc
+> bắt buộc nào trong hướng này; phần "việc tiếp theo (tuỳ chọn)" còn lại ở cuối §3.
 
 ## 0. Bối cảnh — vì sao có Phase 2/3
 
@@ -108,23 +109,31 @@ Smoke màn thật `basic-information-input`: expected 56, covered 40, **16 gaps,
 - Ngưỡng: "0 gap chưa justify" hay `depth_rate >= X%`?
 - Cơ chế justify đặt ở inventory hay ở testcase?
 
-## 3. Phase 3 — `expected` có cấu trúc + critic linter
+## 3. Phase 3 — `expected` có cấu trúc + critic linter  ✅ ĐÃ XONG (merged `main`)
 
+> **3a (structured expected) ĐÃ XONG** — spec `specs/2026-06-18-phase3a-structured-expected-design.md`,
+> plan `plans/2026-06-18-phase3a-structured-expected.md`. Commits `082d77c..ac585bf` (3 feat) + doc skill
+> `231c2e6`, merge `e71e7b0`. Test: **116 passed**.
 > **3b (critic linter) ĐÃ XONG** — spec `specs/2026-06-17-phase3b-critic-linter-design.md`,
-> plan `plans/2026-06-17-phase3b-critic-linter.md`. CLI `tk-critic` (advisory + cổng nhẹ
-> depends_on). Còn lại **3a structured expected** dưới đây.
+> plan `plans/2026-06-17-phase3b-critic-linter.md`. CLI `tk-critic` (advisory + cổng nhẹ depends_on).
 
 **Mục tiêu:** Expected hết chung chung (review điểm #9) + tự động soi nhóm còn thiếu (đóng vai reviewer).
 
-**3a. Structured expected (review #9):**
-- Hiện `expected: list[str]` (free-text). Đề xuất cho phép phần tử là assertion có cấu trúc:
-  `{field, value, enabled, required, button_state, request, redirect}` (mọi key optional).
-- **Ràng buộc cứng:** template team cột A–R cố định → khi render xlsx phải *làm phẳng* assertion về
-  text (vd "Field A = XXX; Field B disabled; POST /api/x; redirect /home") để không đổi format deliverable.
-  Tức schema/loader nhận cả 2 dạng (str hoặc dict), render gộp thành chuỗi người đọc được.
-- File đụng: `tcformat/schema.py` (parse expected hỗn hợp), `tcformat/render_xlsx.py` (flatten khi ghi
-  cột 8), test.
-- Lưu ý back-compat: YAML cũ `expected` toàn string phải vẫn chạy.
+**3a. Structured expected (review #9) — ĐÃ GIAO:**
+- Mỗi phần tử `expected` nay là `str` (như cũ) HOẶC dict assertion với đúng 7 key optional:
+  `{field, value, enabled, required, button_state, request, redirect}`. Một dict = MỘT subject (`field`);
+  nhiều field → nhiều phần tử list.
+- **Validate fail-fast** trong `schema.py`: key lạ → `SchemaError`; dict phải có ≥1 key ngoài `field`
+  với giá trị non-None (`{}` và `{field: "X"}` bị chặn; `enabled: false`/`required: false` hợp lệ).
+- **`flatten_expected(item) -> str`** (module-level, thuần) là NGUỒN DUY NHẤT làm phẳng str/dict → text,
+  dùng lại bởi `render_xlsx.py` (cột 8, giữ đánh số `1./2./3.`) và `critic.py` (keyword match depends_on).
+  Render gộp clause bằng `"; "` theo thứ tự key cố định (vd "Field A = XXX; Field B disabled") → format
+  team cột A–R KHÔNG đổi.
+- **Back-compat:** YAML cũ `expected` toàn string chạy nguyên vẹn (roundtrip có test).
+- **Quyết định đã chốt:** optional toàn bộ (KHÔNG ép category nào). SKILL.md Stage 1 (`generate-testcases`)
+  + Stage 2 (`run-testcases`) đã được bổ sung mô tả dạng dict để generator phát/agent đọc nhất quán.
+- File đụng: `tcformat/schema.py`, `tcformat/render_xlsx.py`, `tcformat/critic.py`, các test tương ứng,
+  2 SKILL.md.
 
 **3b. Critic linter (mã hoá lại chính bộ review tay):**
 - Một bước/agent chạy trên YAML đã sinh, đối chiếu inventory + checklist + business rule, liệt kê nhóm
@@ -135,19 +144,29 @@ Smoke màn thật `basic-information-input`: expected 56, covered 40, **16 gaps,
   (business rule phụ thuộc field, điều kiện required theo mode) để AI trong skill.
 - Gắn vào `SKILL.md` như bước cuối trước khi chuyển Stage 2.
 
-**Câu hỏi mở:**
-- Structured expected: bắt buộc cho case nào (vd chỉ Function/Validation) hay optional toàn bộ?
-- Critic: CLI tất định, AI, hay hybrid?
+**Câu hỏi mở (đã chốt):**
+- Structured expected: **optional toàn bộ** (không ép Function/Validation). Flatten gộp `"; "` theo key
+  cố định; một dict = một subject (`field`).
+- Critic: **hybrid** — phần tất định (depth gaps, unknown techniques, kind thiếu) bằng `tk-critic`; phần
+  phán đoán (business rule, required-theo-mode) để AI trong skill.
+
+**Việc tiếp theo (tuỳ chọn — ngoài hướng coverage-depth):**
+- Để Stage 1 thực sự *phát* dạng dict expected khi sinh case (SKILL đã mô tả; cần thực hành trên màn thật).
+- Tăng độ phủ thực thi Stage 2 / iPad-Safari rồi regenerate báo cáo (xem HANDOFF.md §6).
 
 ## 4. Cách chạy / kiểm chứng nhanh (đã có sau Phase 1)
 
 ```bash
 # Toàn bộ unit test
-./.venv/Scripts/pytest -q          # kỳ vọng: 83 passed (sau Phase 2)
+./.venv/Scripts/pytest -q          # kỳ vọng: 116 passed (sau Phase 3a)
 
 # Cổng depth Stage 1 (Phase 2) — exit non-zero nếu còn gap chưa justify
 ./.venv/Scripts/tk-coverage --screen testcases/<screen>.yaml --config config.yaml \
     [--inventory testcases/<screen>.inventory.yaml] [--matrix-out reports/<screen>_depth.md]
+
+# Critic review Stage 1 (Phase 3b) — checklist review + cổng nhẹ depends_on chưa-liên-kết
+./.venv/Scripts/tk-critic --screen testcases/<screen>.yaml --config config.yaml \
+    [--out reports/<screen>_critic.md]
 
 # Báo cáo depth thủ công cho 1 màn (cần inventory.yaml)
 ./.venv/Scripts/python.exe -c "

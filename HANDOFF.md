@@ -1,7 +1,10 @@
 # Testing-Kit — Session Handoff
 
-> Cập nhật: 2026-06-15. Tài liệu này để một session/agent khác tiếp nối công việc.
+> Cập nhật: 2026-06-18. Tài liệu này để một session/agent khác tiếp nối công việc.
 > Đọc file này trước, rồi mới mở spec/plan chi tiết.
+>
+> **Sau nền 3-stage:** hướng "coverage-depth" (sinh case có chiều sâu) đã hoàn tất — Phase 1/2/3a/3b
+> đều merge `main`. Chi tiết ở `docs/superpowers/2026-06-17-phase2-3-handoff.md`. Tóm tắt ở §2.
 
 ## 1. Toolkit này là gì
 
@@ -21,7 +24,7 @@ Tài liệu thiết kế + strategy.xlsx
 
 ## 2. Trạng thái hiện tại
 
-- **Test suite: 47 passed** (`./.venv/Scripts/python.exe -m pytest -q`).
+- **Test suite: 116 passed** (`./.venv/Scripts/python.exe -m pytest -q`).
 - Git: Stage 3 nằm trên branch `stage3-reporting` (rẽ từ `main`). Stage 2 ở `stage2-test-execution`. Stage 1 + nền ở `main`.
   - `8ce9d0c` init → `4f9b6d6` toolkit nền → `df654e8` gen_report → `7c1612c` Stage 1 (trên main)
   - Branch `stage2-test-execution`: spec + plan + Task 1–6 (schema note, runlog, render result cols,
@@ -55,6 +58,18 @@ Tài liệu thiết kế + strategy.xlsx
   - `scripts/gen_report.py --yaml <screen>.yaml` — đường CLI Stage 3 (duy nhất), in tóm tắt và **exit
     non-zero nếu cổng fail**.
   - Đã chạy thật trên `basic-information-input.yaml`: executed 4/48, pass 100%, 6 ảnh nhúng, exit PASS.
+- **Coverage-depth (sinh case có chiều sâu — Phase 1/2/3a/3b, đã merge `main`):**
+  - **Đo chiều sâu (P1):** `tcformat/inventory.py` (trục fan-out element×technique), `tcformat/checklists.py`
+    + `data/checklists.yaml` (ma trận kỹ thuật theo kind), `coverage.check_depth` → `DepthReport`. Tag
+    YAML-only `category`/`technique`/`target` trên testcase (không render xlsx).
+  - **Cổng + ma trận (P2):** CLI `tk-coverage` (exit non-zero khi còn ô element×technique chưa có case &
+    chưa `skip_techniques`), `tcformat/depth_matrix.py` render ✓/✗/– (markdown).
+  - **Structured expected (P3a):** phần tử `expected` có thể là dict assertion `{field,value,enabled,
+    required,button_state,request,redirect}`; `schema.flatten_expected` làm phẳng → text (cột 8 xlsx +
+    critic), format team A–R không đổi; YAML cũ toàn string vẫn chạy.
+  - **Critic linter (P3b):** CLI `tk-critic` — checklist review theo nhóm + cổng nhẹ `depends_on` chưa
+    liên kết; phần phán đoán (BusinessRule/UI) để AI trong skill.
+  - Hai SKILL (`generate-testcases`/`run-testcases`) đã cập nhật quy trình theo các bước trên.
 
 ### Chưa làm
 - (Tuỳ chọn) Chạy nốt các testcase còn lại / trên iPad-Safari bằng skill `run-testcases` rồi regenerate
@@ -82,7 +97,9 @@ Tài liệu thiết kế + strategy.xlsx
 |---|---|
 | `strategy/strategy.xlsx` | Chiến lược test (8 sheet: API/Integration/System/Env/Deploy/Metrics) |
 | `template/Format test case + Test report.xlsx` | Template team: sheet "3. Test Report", "4.1.*" testcase, "5. Checklist" |
-| `tcformat/schema.py` | Contract YAML test case (`Screen`/`Testcase`/`Result`) + validate |
+| `tcformat/schema.py` | Contract YAML test case (`Screen`/`Testcase`/`Result`) + validate; tag depth (`category`/`technique`/`target`); `expected` str-hoặc-dict + `flatten_expected` |
+| `tcformat/inventory.py`, `checklists.py`, `coverage.py` | Trục fan-out + ma trận kỹ thuật + `check_coverage`/`check_depth` (đo độ rộng & chiều sâu) |
+| `tcformat/coverage_cli.py` (`tk-coverage`), `critic.py`+`critic_cli.py` (`tk-critic`), `depth_matrix.py` | Cổng depth Stage 1, critic review, render ma trận element×technique |
 | `tcformat/strategy.py` | `list_objects(xlsx,sheet)`, `all_refs(xlsx)` → ref dạng `"2.3.1#1"` |
 | `tcformat/coverage.py` | `check_coverage(screen, refs)` → covered/missing/unknown |
 | `tcformat/render_xlsx.py` | `render(screens, template, out)` → xlsx sheet "4.x" |
@@ -145,6 +162,9 @@ admin@example.com/admin, noperm@example.com/n.
   - `2026-06-15-testing-kit-design.md` + `2026-06-15-testing-kit.md` (nền tảng)
   - `2026-06-15-stage1-testcase-generation-design.md` + `...-stage1-testcase-generation.md` (Stage 1)
   - `2026-06-15-stage2-test-execution-design.md` + `2026-06-15-stage2-test-execution.md` (Stage 2)
+  - Coverage-depth: `2026-06-17-phase1-coverage-depth-*`, `2026-06-17-phase2-depth-gate-*`,
+    `2026-06-18-phase3a-structured-expected-*`, `2026-06-17-phase3b-critic-linter-*`
+    (+ handoff tổng `2026-06-17-phase2-3-handoff.md`)
 
 ## 8. Cạm bẫy đã gặp (đừng lặp lại)
 

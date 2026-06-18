@@ -90,17 +90,35 @@ Draft test cases from design docs into the team xlsx format with strategy
 coverage. Driven by the `generate-testcases` skill (AI reads the design docs);
 the deterministic backbone lives in `tcformat/`:
 
-- `tcformat/schema.py` — YAML test-case contract (`testcases/<screen>.yaml`)
+- `tcformat/schema.py` — YAML test-case contract (`testcases/<screen>.yaml`).
+  Each `expected` item is a plain string **or** a structured assertion dict
+  (`{field, value, enabled, required, button_state, request, redirect}`, all
+  optional); it is flattened to text on render, so the team xlsx format is
+  unchanged.
 - `tcformat/strategy.py`— testing-object refs from the strategy xlsx (bundled
   under `tcformat/data/`, resolved via `tcformat.resources`; exposed as the
   `tk-strategy` CLI)
-- `tcformat/coverage.py`— checks every strategy object has a testcase
+- `tcformat/inventory.py` + `tcformat/checklists.py` — the fan-out axis: every
+  interactive element (`testcases/<screen>.inventory.yaml`) crossed with the
+  per-kind technique checklist (`tcformat/data/checklists.yaml`, override via
+  `checklists_path`)
+- `tcformat/coverage.py`— breadth (every strategy object has a testcase) **and**
+  depth (`check_depth`: every element×technique cell is covered)
 - `tcformat/render_xlsx.py` — renders YAML → testcase sheet "4.x" (standalone
   `testcases/<screen>.xlsx`, and reused by the Stage 3 report via `render_into`)
 
+Two Stage-1 quality gates run after drafting (both ship as console scripts):
+
+- `tk-coverage` — depth gate: exits non-zero while any element×technique cell
+  has no test case and is not justified via `skip_techniques`. Also prints the
+  element×technique matrix (`--matrix-out`).
+- `tk-critic` — regroups the depth analysis into a review checklist and lightly
+  gates unlinked `depends_on` edges; the judgment-heavy categories are left to
+  the skill's AI review.
+
 Invoke in Claude Code: run the `generate-testcases` skill and point it at the
 screen's design docs. Output: a reviewable YAML contract + the team-format xlsx,
-with a coverage summary.
+a breadth + depth coverage summary, and (optionally) a critic review.
 
 ## Run test cases (Stage 2)
 
