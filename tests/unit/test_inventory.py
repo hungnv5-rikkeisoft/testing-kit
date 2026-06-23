@@ -72,3 +72,29 @@ def test_skip_techniques_loaded(tmp_path):
     by_id = {e.id: e for e in inv.elements}
     assert by_id["name"].skip_techniques == ["boundary", "max-length"]
     assert by_id["btn"].skip_techniques == []   # default empty
+
+
+def test_load_inventory_parses_absent(tmp_path):
+    p = tmp_path / "s.inventory.yaml"
+    p.write_text(
+        "screen: S\n"
+        "absent:\n"
+        "  api: 'Màn chỉ hiển thị, không gọi backend.'\n"
+        "elements:\n"
+        "  - {id: btn, kind: button, label: B}\n",
+        encoding="utf-8")
+    inv = load_inventory(p)
+    assert inv.absent == {"api": "Màn chỉ hiển thị, không gọi backend."}
+
+
+def test_load_inventory_absent_defaults_empty(tmp_path):
+    p = tmp_path / "s.inventory.yaml"
+    p.write_text("screen: S\nelements: []\n", encoding="utf-8")
+    assert load_inventory(p).absent == {}
+
+
+def test_load_inventory_absent_must_be_mapping(tmp_path):
+    p = tmp_path / "s.inventory.yaml"
+    p.write_text("screen: S\nabsent: [api]\nelements: []\n", encoding="utf-8")
+    with pytest.raises(InventoryError):
+        load_inventory(p)

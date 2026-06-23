@@ -35,6 +35,7 @@ class Element:
 class Inventory:
     screen: str
     elements: list = field(default_factory=list)
+    absent: dict = field(default_factory=dict)
 
 
 def _element(d: dict) -> Element:
@@ -64,4 +65,8 @@ def load_inventory(path) -> Inventory:
     if not data.get("screen"):
         raise InventoryError("missing required 'screen'")
     elements = [_element(e) for e in (data.get("elements") or [])]
-    return Inventory(screen=data["screen"], elements=elements)
+    absent = data.get("absent") or {}
+    if not isinstance(absent, dict):
+        raise InventoryError("'absent' must be a mapping of kind -> reason")
+    absent = {str(k): str(v) for k, v in absent.items()}
+    return Inventory(screen=data["screen"], elements=elements, absent=absent)
