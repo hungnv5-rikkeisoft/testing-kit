@@ -17,6 +17,7 @@ tk-report = "tcformat.report_cli:main"
 tk-strategy = "tcformat.strategy:main"
 tk-coverage = "tcformat.coverage_cli:main"
 tk-critic = "tcformat.critic_cli:main"
+tk-inventory-audit = "tcformat.inventory_audit:main"
 
 [tool.setuptools]
 packages = ["tcformat", "toolkit"]
