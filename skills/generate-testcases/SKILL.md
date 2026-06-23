@@ -34,6 +34,16 @@ then render the team-format xlsx and verify 100% strategy coverage.
    buttons present) before writing cases — a missing element here becomes
    missing coverage downstream.
 
+   **(Advisory) Đối chiếu với app thật:** nếu app đang chạy, dùng Playwright MCP
+   `browser_snapshot` chụp cây element của màn, lưu thành JSON
+   `{elements:[{role,name}], forms:[{action,method}]}`, rồi chạy:
+   ```bash
+   ./.venv/Scripts/tk-inventory-audit --inventory testcases/<screen>.inventory.yaml \
+       --snapshot <snapshot.json> --out reports/<screen>_inventory-audit.md
+   ```
+   Đối chiếu các cảnh báo SUSPECTED MISSING / STALE / FORM-WITHOUT-API trước khi
+   chốt inventory. Đây là advisory (luôn exit 0) — không tự sửa, người/AI quyết định.
+
 2. **Fan out into cases.** For EACH strategy testing object relevant to the
    screen, AND for EACH (element x technique) implied by the checklist
    (element kinds + the once-per-screen `screen` techniques), write a testcase.
@@ -73,6 +83,13 @@ then render the team-format xlsx and verify 100% strategy coverage.
    ```bash
    ./.venv/Scripts/tk-coverage --screen testcases/<screen>.yaml --config config.yaml
    ```
+   `tk-coverage` nay chạy **completeness lint (hard gate)** TRƯỚC depth:
+   - R1: nếu có testcase với assertion `request`/`redirect` thì inventory phải có
+     element `kind: api` (hoặc khai báo `absent.api: "<lý do>"`).
+   - R3: mọi `target` của testcase phải là `screen` hoặc id element có thật.
+   Vi phạm → exit non-zero, section "INVENTORY COMPLETENESS" liệt kê cách sửa
+   (thêm element, hoặc thêm `absent.<kind>: "<lý do>"` vào inventory).
+
    CLI exit **non-zero** khi còn ô element×technique chưa có case và chưa justify.
    Nếu fail: bổ sung test case cho ô thiếu, HOẶC thêm `skip_techniques: [<technique>, ...]`
    (kèm lý do rõ ràng) cho element trong `testcases/<screen>.inventory.yaml`, rồi chạy lại.
