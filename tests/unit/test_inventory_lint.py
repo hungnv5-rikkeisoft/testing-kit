@@ -47,6 +47,19 @@ def test_R1_not_triggered_without_request_or_redirect():
     assert check_completeness(inv, sc).ok
 
 
+def test_R1_not_triggered_for_dict_without_request_or_redirect():
+    inv = Inventory(screen="S", elements=[Element(id="b", kind="button")])
+    sc = _screen([_tc("T1", target="b",
+                       expected=[{"field": "email", "value": "x@y.com"}])])
+    assert check_completeness(inv, sc).ok
+
+
+def test_R1_not_triggered_for_dict_with_null_request():
+    inv = Inventory(screen="S", elements=[Element(id="b", kind="button")])
+    sc = _screen([_tc("T1", target="b", expected=[{"request": None, "value": "ok"}])])
+    assert check_completeness(inv, sc).ok
+
+
 def test_R3_target_must_exist():
     inv = Inventory(screen="S", elements=[Element(id="b", kind="button")])
     sc = _screen([_tc("T1", target="ghost", expected=["x"])])
