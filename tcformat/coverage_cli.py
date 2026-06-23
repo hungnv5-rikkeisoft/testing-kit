@@ -49,8 +49,10 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     inv_path = args.inventory or _default_inventory(args.screen)
-    _, inventory, checklists, report = run_depth_check(
+    screen, inventory, checklists, report = run_depth_check(
         args.screen, inv_path, config=args.config)
+    from tcformat.inventory_lint import check_completeness
+    lint = check_completeness(inventory, screen)
 
     from tcformat.depth_matrix import render_depth_matrix
     matrix = render_depth_matrix(inventory, checklists, report)
@@ -76,6 +78,13 @@ def main(argv=None):
         for eid, kind in report.kinds_without_checklist:
             print(f"  ! {eid} (kind {kind})")
 
+    if lint.violations or inventory.absent:
+        print(f"\nINVENTORY COMPLETENESS ({len(lint.violations)} violation(s)):")
+        for v in lint.violations:
+            print(f"  ✗ [{v.rule}] {v.message}")
+        for kind, reason in inventory.absent.items():
+            print(f"  – absent.{kind}: {reason}")
+
     print("\n" + matrix)
     if args.matrix_out:
         out = Path(args.matrix_out)
@@ -83,7 +92,7 @@ def main(argv=None):
         out.write_text(matrix + "\n", encoding="utf-8")
         print(f"\nMatrix -> {args.matrix_out}")
 
-    raise SystemExit(1 if report.gaps else 0)
+    raise SystemExit(1 if (report.gaps or lint.violations) else 0)
 
 
 if __name__ == "__main__":

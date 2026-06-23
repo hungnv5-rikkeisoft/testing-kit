@@ -82,3 +82,55 @@ def test_unicode_output_survives_non_utf8_stdout(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as e:
         main(argv)            # must NOT raise UnicodeEncodeError
     assert e.value.code == 1
+
+
+def test_main_exits_nonzero_on_completeness_violation(tmp_path, capsys):
+    import pytest
+    from tcformat.coverage_cli import main
+    screen = tmp_path / "s.yaml"
+    screen.write_text(
+        "screen: S\ntest_level: IT\ntestcases:\n"
+        "  - id: T1\n    main_item: m\n    target: btn\n    technique: single-action\n"
+        "    expected:\n      - {request: 'POST /'}\n",
+        encoding="utf-8")
+    inv = tmp_path / "s.inventory.yaml"
+    inv.write_text(
+        "screen: S\nelements:\n  - {id: btn, kind: button, label: B}\n",
+        encoding="utf-8")
+    with pytest.raises(SystemExit) as e:
+        main(["--screen", str(screen), "--inventory", str(inv)])
+    assert e.value.code == 1
+    out = capsys.readouterr().out
+    assert "COMPLETENESS" in out and "R1" in out
+
+
+def test_main_completeness_passes_with_declared_absent(tmp_path):
+    import pytest
+    import yaml
+    from tcformat.coverage_cli import main
+    # Use a minimal checklists (single-action only, no screen techniques) so depth
+    # is clean and the test isolates completeness behavior (brief note).
+    checklists = {"button": [{"technique": "single-action",
+                               "category": "Function", "title": "x"}],
+                  "screen": []}
+    (tmp_path / "checklists.yaml").write_text(yaml.safe_dump(checklists),
+                                              encoding="utf-8")
+    (tmp_path / "config.yaml").write_text(
+        yaml.safe_dump({"checklists_path": str(tmp_path / "checklists.yaml")}),
+        encoding="utf-8")
+    screen = tmp_path / "s.yaml"
+    screen.write_text(
+        "screen: S\ntest_level: IT\ntestcases:\n"
+        "  - id: T1\n    main_item: m\n    target: btn\n    technique: single-action\n"
+        "    expected:\n      - {request: 'POST /'}\n",
+        encoding="utf-8")
+    inv = tmp_path / "s.inventory.yaml"
+    inv.write_text(
+        "screen: S\nabsent:\n  api: 'mock POST, không kiểm response'\n"
+        "elements:\n  - {id: btn, kind: button, label: B}\n",
+        encoding="utf-8")
+    with pytest.raises(SystemExit) as e:
+        main(["--screen", str(screen), "--inventory", str(inv),
+              "--config", str(tmp_path / "config.yaml")])
+    # No depth gaps (single-action covered), no lint violation (api declared absent):
+    assert e.value.code == 0
