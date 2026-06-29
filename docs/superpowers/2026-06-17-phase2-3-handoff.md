@@ -150,9 +150,7 @@ Smoke màn thật `basic-information-input`: expected 56, covered 40, **16 gaps,
 - Critic: **hybrid** — phần tất định (depth gaps, unknown techniques, kind thiếu) bằng `tk-critic`; phần
   phán đoán (business rule, required-theo-mode) để AI trong skill.
 
-**Việc tiếp theo (tuỳ chọn — ngoài hướng coverage-depth):**
-- Để Stage 1 thực sự *phát* dạng dict expected khi sinh case (SKILL đã mô tả; cần thực hành trên màn thật).
-- Tăng độ phủ thực thi Stage 2 / iPad-Safari rồi regenerate báo cáo (xem HANDOFF.md §6).
+**Việc tiếp theo:** hướng coverage-depth đã hết việc bắt buộc. Hướng phát triển kế tiếp xem **§6**.
 
 ## 4. Cách chạy / kiểm chứng nhanh (đã có sau Phase 1)
 
@@ -193,3 +191,36 @@ print('depth gaps', len(dep.gaps), 'rate', round(dep.depth_rate,2))
 - Tag mới là **YAML-only**; KHÔNG đổi format team xlsx (cột A–R). Mọi cấu hình overridable qua config
   (`checklists_path`, `strategy_path`, `template_path`) — đổi dự án không sửa code.
 - Spec là tiếng Việt; giữ thuật ngữ nhất quán khi sinh case/báo cáo.
+
+## 6. Hướng tương lai (gợi ý cho session kế tiếp)
+
+Coverage-depth đã đóng. Hướng mạnh nhất tiếp theo **xây trực tiếp trên Phase 3a** và được chính spec 3a
+chừa lại (`specs/2026-06-18-phase3a-structured-expected-design.md` §6: "KHÔNG dùng assertion để tự động
+so khớp khi chạy Stage 2 … Để mở cho phase sau"):
+
+### 6.1 (Đề xuất chính) Structured expected → assertion *thực thi được* ở Stage 2
+- **Vấn đề:** hiện `expected` dict mới chỉ *hiển thị* (flatten ra text cho người đọc). Stage 2 vẫn để agent
+  phán đoán bằng mắt → vẫn chủ quan đúng/sai.
+- **Ý tưởng:** mỗi key assertion map sang một phép kiểm tất định mà `run-testcases` có sẵn dữ liệu:
+  `request` → đối chiếu `browser_network_requests` (method+path); `redirect` → so URL hiện tại;
+  `value`/`enabled`/`required` → đọc `browser_snapshot`/DOM của `field`; `button_state` → trạng thái nút.
+  Agent vẫn lái trình duyệt, nhưng phần *chấm OK/NG* của các assertion có cấu trúc do code quyết → giảm
+  chủ quan, tăng độ lặp lại.
+- **Ràng buộc giữ nguyên:** assertion vẫn optional (case chỉ có expected string vẫn agent-judge như cũ);
+  không đổi format xlsx; YAML cũ chạy nguyên.
+- **File dự kiến đụng:** một module helper mới trong `tcformat/` (vd `assertions.py` — map dict→kết quả
+  kiểm), `skills/run-testcases/SKILL.md` (bước 5 gọi helper khi item là dict), test. **Chưa code** — cần
+  brainstorming → spec → plan như các phase trước.
+- **Câu hỏi mở cần chốt trước:** assertion mismatch là `NG` cứng hay chỉ cảnh báo để người xác nhận? Lấy
+  bằng chứng (network/DOM) ở đâu trong luồng MCP để tất định mà không làm chậm run?
+
+### 6.2 Hướng nhẹ hơn (tuỳ chọn, độc lập)
+- **Critic AI sub-skill:** hiện phần phán đoán (BusinessRule/UI, required-theo-mode) để AI tự do trong
+  `generate-testcases`. Có thể đóng gói thành sub-skill có prompt/checklist cố định để kết quả ổn định hơn.
+- **Dùng thật dict expected:** chạy `generate-testcases` trên một màn thật để *phát* dạng dict (SKILL đã
+  mô tả) — vừa kiểm chứng 3a end-to-end, vừa tạo dữ liệu mẫu cho 6.1.
+- **Độ phủ thực thi:** chạy nốt testcase / iPad-Safari rồi regenerate báo cáo (HANDOFF.md §6) — vận hành,
+  không phải framework.
+
+> Nguyên tắc: bất kỳ hướng nào ở trên đều theo quy trình brainstorming → writing-plans →
+> subagent-driven-development (§5), giữ YAML-only + không đụng format team A–R.
